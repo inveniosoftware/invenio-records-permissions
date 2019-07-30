@@ -7,11 +7,11 @@
 # more details.
 
 from elasticsearch_dsl.query import Q
-from invenio_access.permissions import any_user, authenticated_user
+from invenio_access.permissions import any_user
 from flask_principal import UserNeed, ActionNeed
 
 
-class NeedClass(object):
+class _NeedClass(object):
 
     def needs(self):
         pass
@@ -23,46 +23,52 @@ class NeedClass(object):
         pass
 
 
-class _AnyUser(NeedClass):
+class _AnyUser(_NeedClass):
 
     def __init__(self):
         super(_AnyUser, self).__init__()
 
     def needs(self):
-        yield any_user
+        return [any_user]
+
+    def query_filter(self):
+        return Q('match_all')  # match all query
 
 
 AnyUser = _AnyUser()
 
 
-class _Deny(NeedClass):
+class _Deny(_NeedClass):
 
     def __init__(self):
         super(_Deny, self).__init__()
 
     def excludes(self):
-        yield any_user
+        return [any_user]
+
+    def query_filter(self):
+        return ~Q('match_all')  # Match None
 
 
 Deny = _Deny()
 
 
-class _Admin(NeedClass):
+class _Admin(_NeedClass):
 
     def __init__(self):
         super(_Admin, self).__init__()
 
     def needs(self):
-        yield ActionNeed('admin-access')
+        return [ActionNeed('admin-access')]
 
 
 Admin = _Admin()
 
 
-class RecordNeedClass(NeedClass):
+class _RecordNeedClass(_NeedClass):
 
     def __init__(self):
-        super(RecordNeedClass, self).__init__()
+        super(_RecordNeedClass, self).__init__()
 
     def needs(self, record):
         pass
@@ -70,41 +76,61 @@ class RecordNeedClass(NeedClass):
     def excludes(self, record):
         pass
 
+    # It get the user because the query filter is the opposite action.
+    # Needs are whom can access a record, while the filter is which records
+    # can be accessed by a user.
     def query_filter(self, user):
         pass
 
 
-class _RecordOwners(RecordNeedClass):
+class _RecordOwners(_RecordNeedClass):
 
     def __init__(self):
         super(_RecordOwners, self).__init__()
 
     def needs(self, record):
         if record:
+            owner_needs = []
             for owner in record.get('owners', []):
-                yield UserNeed(owner)
+                owner_needs.append(UserNeed(owner))
+            return owner_needs
 
-    # def query_filter(self, user):
-    #     return Q('term', owner=user.get_id())
+        return None
+
+    def query_filter(self, user):
+        if user and user.is_authenticated:
+            return Q('term', owners=user.get_id())
+        else:
+            return None
 
 
 RecordOwners = _RecordOwners()
 
 
-class _DepositOwners(RecordNeedClass):
+class _DepositOwners(_RecordNeedClass):
 
     def __init__(self):
         super(_DepositOwners, self).__init__()
 
     def needs(self, record):
-        for owner in record.get('deposits', {}).get('owners', []):
-            yield UserNeed(owner)
+        if record:
+            deposit_owners = []
+            for owner in record.get('deposits', {}).get('owners', []):
+                deposit_owners.append(UserNeed(owner))
+            return deposit_owners
+
+        return None
+
+    def query_filter(self, user):
+        if user and user.is_authenticated:
+            return Q('term', **{"deposits.owners": user.get_id()})
+        return None
 
 
 DepositOwners = _DepositOwners()
 
 
-class IfPublicFactory(RecordNeedClass):
+class IfPublicFactory(_RecordNeedClass):
 
     def __init__(self, is_restricted, es_filter):
         super(IfPublicFactory, self).__init__()
@@ -114,12 +140,13 @@ class IfPublicFactory(RecordNeedClass):
     def needs(self, record):
         if record:
             if not self.is_restricted(record):
-                yield any_user
+                return [any_user]
+            else:
+                return None
         # FIXME: Do this distinction? or a different generator for listing?
         # If the record is None, its a ``list`` operation
         # The filter is created by the ``query_filter`` function.
-        else:
-            yield any_user
+        return [any_user]
 
     def query_filter(self, *args):
         return self.es_filter(*args)
@@ -141,8 +168,36 @@ def _is_files_restricted(record=None):
         return True
     return record['_access']['files_restricted']
 
+#
+# | Meta Restricted | Files Restricted | Access Right | Result |
+# |-----------------|------------------|--------------|--------|
+# |       True      |       True       |   Not Open   |  False |
+# |-----------------|------------------|--------------|--------|
+# |       True      |       True       |     Open     |  False | # Inconsistent
+# |-----------------|------------------|--------------|--------|
+# |       True      |       False      |   Not Open   |  False | # Inconsistent
+# |-----------------|------------------|--------------|--------|
+# |       True      |       False      |     Open     |  False | # Inconsistent
+# |-----------------|------------------|--------------|--------|
+# |       False     |       True       |   Not Open   |  False | ??Inconsistent
+# |-----------------|------------------|--------------|--------|
+# |       False     |       True       |     Open     |  False |
+# |-----------------|------------------|--------------|--------|
+# |       False     |       False      |   Not Open   |  False | # Inconsistent
+# |-----------------|------------------|--------------|--------|
+# |       False     |       False      |     Open     |  True  |
+# |-----------------|------------------|--------------|--------|
+#
+
+
+def _is_files_restricted_filter(*args):
+    files_restricted = Q('term', **{"_access.files_restricted": False})
+    access_rights = Q('term', access_right='open')
+
+    return _is_restricted_filter() & files_restricted & access_rights
+
 
 AnyUserIfPublicFiles = IfPublicFactory(
     _is_files_restricted,
-    _is_restricted_filter  # FIXME: For testing, need to translate the other one.
+    _is_files_restricted_filter
 )

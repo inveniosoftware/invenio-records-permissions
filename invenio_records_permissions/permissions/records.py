@@ -6,13 +6,12 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-from elasticsearch_dsl.query import Q
 from flask import current_app
 from flask_login import current_user
 
 from ..generators import Admin, AnyUserIfPublic, AnyUserIfPublicFiles, Deny, \
-    NeedClass, RecordNeedClass, RecordOwners
-from .base import BasePermission, PermissionConfig
+    _NeedClass, _RecordNeedClass, RecordOwners
+from .base import BasePermission, _PermissionConfig
 
 # REMOVE
 from ..generators import AnyUser
@@ -57,20 +56,19 @@ class RecordPermission(BasePermission):
 
     @property
     def needs(self):
-        # Needs caching cannot be done here, since sometimes depends on the
-        # record. It must be implemented in each generator.
-        needs = set()
+        needs = []
         for needs_generator in self.permission_list:
             tmp_needs = None
-            if isinstance(needs_generator, RecordNeedClass):
+            if isinstance(needs_generator, _RecordNeedClass):
                 tmp_needs = needs_generator.needs(self.record)
-            elif isinstance(needs_generator, NeedClass):
+            elif isinstance(needs_generator, _NeedClass):
                 tmp_needs = needs_generator.needs()
             else:
+                # FIXME: Shall it raise and complain?
                 _log_unknwon_generator(type(needs_generator).__name__)
 
             if tmp_needs:
-                needs = needs.union(tmp_needs)
+                needs.extend(tmp_needs)
 
         self.explicit_needs = self.explicit_needs.union(needs)
         self._load_permissions()
@@ -79,20 +77,19 @@ class RecordPermission(BasePermission):
 
     @property
     def excludes(self):
-        excludes = set()
+        excludes = []
         for needs_generator in self.permission_list:
 
             tmp_excludes = None
-            if isinstance(needs_generator, RecordNeedClass):
+            if isinstance(needs_generator, _RecordNeedClass):
                 tmp_excludes = needs_generator.excludes(self.record)
-            elif isinstance(needs_generator, NeedClass):
+            elif isinstance(needs_generator, _NeedClass):
                 tmp_excludes = needs_generator.excludes()
             else:
-                # FIXME: Shall it raise and complain?
                 _log_unknwon_generator(type(needs_generator).__name__)
 
             if tmp_excludes:
-                excludes = excludes.union(tmp_excludes)
+                excludes.extend(tmp_excludes)
 
         self.explicit_needs = self.explicit_needs.union(excludes)
         self._load_permissions()
@@ -101,27 +98,24 @@ class RecordPermission(BasePermission):
 
     @property
     def query_filter(self):
-        query_filters = None
+        query_filters = []
         for qf_generator in self.permission_list:
 
-            tmp_qfs = None
-            if isinstance(qf_generator, RecordNeedClass):
-                tmp_qfs = qf_generator.query_filter(current_user)
-            elif isinstance(qf_generator, NeedClass):
-                tmp_qfs = qf_generator.query_filter()
+            tmp_query_filter = None
+            if isinstance(qf_generator, _RecordNeedClass):
+                tmp_query_filter = qf_generator.query_filter(current_user)
+            elif isinstance(qf_generator, _NeedClass):
+                tmp_query_filter = qf_generator.query_filter()
             else:
                 _log_unknwon_generator(type(qf_generator).__name__)
-            
-            # FIXME: there is no "empty" filter in order to initialize the filter to it
-            # The match_all filter makes ``text`` type fail (no ``fielddata`` enabled`)
-            if not query_filters:
-                query_filters = tmp_qfs
-            if tmp_qfs:
-                query_filters = query_filters | tmp_qfs
+
+            if tmp_query_filter:
+                query_filters.append(tmp_query_filter)
+
         return query_filters
 
 
-class RecordPermissionConfig(PermissionConfig):
+class RecordPermissionConfig(_PermissionConfig):
     """Access control configuration for records.
 
     Note that even if the array is empty, the invenio_access Permission class

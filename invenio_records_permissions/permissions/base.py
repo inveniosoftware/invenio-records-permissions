@@ -9,16 +9,17 @@
 from elasticsearch_dsl.query import Q
 from flask import current_app
 from invenio_access import Permission
+from ..generators import Deny
 
 
-class PermissionConfig(object):
+class _PermissionConfig(object):
 
     # Deny all by default
-    can_create = []
-    can_list = []
-    can_read = []
-    can_update = []
-    can_delete = []
+    can_create = [Deny]
+    can_list = [Deny]
+    can_read = [Deny]
+    can_update = [Deny]
+    can_delete = [Deny]
 
     @classmethod
     def get_permission_list(cls, action):
@@ -40,7 +41,8 @@ class PermissionConfig(object):
 
 class BasePermission(Permission):
 
-    def __init__(self, config, action):
+    # FIXME: Default action?
+    def __init__(self, config=_PermissionConfig, action=None):
         super(BasePermission, self).__init__()
         self.config = config
         self.permission_list = self.config.get_permission_list(action)
@@ -49,23 +51,31 @@ class BasePermission(Permission):
     def needs(self):
         # Needs caching cannot be done here, since sometimes depends on the
         # record. It must be implemented in each generator.
-        needs = set()
+        needs = []
         for needs_generator in self.permission_list:
-            needs = needs.union(needs_generator.needs())
+            tmp_need = needs_generator.needs()
+            if tmp_need:
+                needs.extend(tmp_need)
+
         return needs
 
     @property
     def excludes(self):
         # Needs caching cannot be done here, since sometimes depends on the
         # record. It must be implemented in each generator.
-        excludes = set()
+        excludes = []
         for excludes_generator in self.permission_list:
-            excludes = excludes.union(excludes_generator.excludes())
+            tmp_exclude = excludes_generator.excludes()
+            if tmp_exclude:
+                excludes.extend(tmp_exclude)
+
         return excludes
 
     @property
     def query_filter(self):
-        query_filters = Q()
+        query_filters = []
         for qf_generator in self.permission_list:
-            query_filters = query_filters | qf_generator.query_filter()
+            tmp_query_filter = qf_generator.query_filter()
+            if tmp_query_filter:
+                query_filters.append(tmp_query_filter)
         return query_filters
