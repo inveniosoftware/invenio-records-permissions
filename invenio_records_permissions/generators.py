@@ -8,6 +8,7 @@
 
 from elasticsearch_dsl.query import Q
 from invenio_access.permissions import any_user
+from flask import g
 from flask_principal import UserNeed, ActionNeed
 
 
@@ -76,12 +77,6 @@ class _RecordNeedClass(_NeedClass):
     def excludes(self, record):
         pass
 
-    # It get the user because the query filter is the opposite action.
-    # Needs are whom can access a record, while the filter is which records
-    # can be accessed by a user.
-    def query_filter(self, user):
-        pass
-
 
 class _RecordOwners(_RecordNeedClass):
 
@@ -89,19 +84,17 @@ class _RecordOwners(_RecordNeedClass):
         super(_RecordOwners, self).__init__()
 
     def needs(self, record):
-        if record:
-            owner_needs = []
-            for owner in record.get('owners', []):
-                owner_needs.append(UserNeed(owner))
-            return owner_needs
+        owner_needs = []
+        for owner in record.get('owners', []):
+            owner_needs.append(UserNeed(owner))
+        return owner_needs
 
+    def query_filter(self):
+        provides = g.identity.provides
+        for need in provides:
+            if need.method == 'id':
+                return Q('term', owners=need.value)
         return None
-
-    def query_filter(self, user):
-        if user and user.is_authenticated:
-            return Q('term', owners=user.get_id())
-        else:
-            return None
 
 
 RecordOwners = _RecordOwners()
@@ -113,17 +106,16 @@ class _DepositOwners(_RecordNeedClass):
         super(_DepositOwners, self).__init__()
 
     def needs(self, record):
-        if record:
-            deposit_owners = []
-            for owner in record.get('deposits', {}).get('owners', []):
-                deposit_owners.append(UserNeed(owner))
-            return deposit_owners
+        deposit_owners = []
+        for owner in record.get('deposits', {}).get('owners', []):
+            deposit_owners.append(UserNeed(owner))
+        return deposit_owners
 
-        return None
-
-    def query_filter(self, user):
-        if user and user.is_authenticated:
-            return Q('term', **{"deposits.owners": user.get_id()})
+    def query_filter(self):
+        provides = g.identity.provides
+        for need in provides:
+            if need.method == 'id':
+                return Q('term', **{"deposits.owners": need.value})
         return None
 
 
@@ -138,15 +130,10 @@ class IfPublicFactory(_RecordNeedClass):
         self.es_filter = es_filter
 
     def needs(self, record):
-        if record:
-            if not self.is_restricted(record):
-                return [any_user]
-            else:
-                return None
-        # FIXME: Do this distinction? or a different generator for listing?
-        # If the record is None, its a ``list`` operation
-        # The filter is created by the ``query_filter`` function.
-        return [any_user]
+        if not self.is_restricted(record):
+            return [any_user]
+        else:
+            return None
 
     def query_filter(self, *args):
         return self.es_filter(*args)
@@ -163,7 +150,7 @@ def _is_restricted_filter(*args):
 AnyUserIfPublic = IfPublicFactory(_is_restricted, _is_restricted_filter)
 
 
-def _is_files_restricted(record=None):
+def _is_files_restricted(record):
     if _is_restricted(record) or record['access_right'] != 'open':
         return True
     return record['_access']['files_restricted']
