@@ -17,9 +17,10 @@ from .base import BasePermission, _PermissionConfig
 from ..generators import AnyUser
 ####
 
-
+# FIXME: Make configuration classes configurable (e.g. import_string)
 # Record factories
 def record_list_permission_factory(record=None):
+    # FIXME: Permanent None for the ``record`` to the RecordPermission?
     return RecordPermission(RecordPermissionConfig, 'list', record)
 
 
@@ -31,6 +32,10 @@ def record_read_permission_factory(record=None):
     # Config and action separated to give access to the config in the
     # generators.
     return RecordPermission(RecordPermissionConfig, 'read', record)
+
+
+def record_read_files_permission_factory(record=None):
+    return RecordPermission(RecordPermissionConfig, 'read_files', record)
 
 
 def record_update_permission_factory(record=None):
@@ -48,9 +53,48 @@ def _log_unknwon_generator(class_name):
     )
 
 
+class RecordPermissionConfig(_PermissionConfig):
+    """Access control configuration for records.
+
+    Note that even if the array is empty, the invenio_access Permission class
+    always adds the ``superuser-access``, so admins will always be allowed.
+
+    - Create action given to no one.
+    - Read access given to everyone.
+    - Update access given to record owners.
+    - Delete access given to admins only.
+    """
+    can_list = [AnyUser]
+    can_create = [Deny]
+    can_read = [AnyUserIfPublic, RecordOwners]
+    can_read_files = [AnyUserIfPublicFiles, RecordOwners]
+    can_update = [RecordOwners]
+    can_delete = [Admin]
+
+    @classmethod
+    def get_permission_list(cls, action):
+        if action == 'create':
+            return cls.can_create
+        elif action == 'list':
+            return cls.can_list
+        elif action == 'read':
+            return cls.can_read
+        elif action == 'read_files':
+            return cls.can_read_files
+        elif action == 'update':
+            return cls.can_update
+        elif action == 'delete':
+            return cls.can_delete
+
+        current_app.logger.error("Unkown action {action}.".format(
+            action=action))
+        return []
+
+
+
 class RecordPermission(BasePermission):
 
-    def __init__(self, config, action, record):
+    def __init__(self, config=RecordPermissionConfig, action=None, record=None):
         super(RecordPermission, self).__init__(config, action)
         self.record = record
 
@@ -79,13 +123,13 @@ class RecordPermission(BasePermission):
     def excludes(self):
         excludes = []
         for needs_generator in self.permission_list:
-
             tmp_excludes = None
             if isinstance(needs_generator, _RecordNeedClass):
                 tmp_excludes = needs_generator.excludes(self.record)
             elif isinstance(needs_generator, _NeedClass):
                 tmp_excludes = needs_generator.excludes()
             else:
+                # FIXME: Shall it raise and complain?
                 _log_unknwon_generator(type(needs_generator).__name__)
 
             if tmp_excludes:
@@ -100,35 +144,16 @@ class RecordPermission(BasePermission):
     def query_filter(self):
         query_filters = []
         for qf_generator in self.permission_list:
-
             tmp_query_filter = None
             if isinstance(qf_generator, _RecordNeedClass):
-                tmp_query_filter = qf_generator.query_filter(current_user)
+                tmp_query_filter = qf_generator.query_filter()
             elif isinstance(qf_generator, _NeedClass):
                 tmp_query_filter = qf_generator.query_filter()
             else:
+                # FIXME: Shall it raise and complain?
                 _log_unknwon_generator(type(qf_generator).__name__)
 
             if tmp_query_filter:
                 query_filters.append(tmp_query_filter)
 
         return query_filters
-
-
-class RecordPermissionConfig(_PermissionConfig):
-    """Access control configuration for records.
-
-    Note that even if the array is empty, the invenio_access Permission class
-    always adds the ``superuser-access``, so admins will always be allowed.
-
-    - Create action given to no one.
-    - Read access given to everyone.
-    - Update access given to record owners.
-    - Delete access given to admins only.
-    """
-    can_list = [AnyUserIfPublic, RecordOwners]
-    can_create = [AnyUser]
-    can_read = [AnyUserIfPublic, RecordOwners]
-    can_read_files = [AnyUserIfPublicFiles, RecordOwners]
-    can_update = [RecordOwners]
-    can_delete = [Admin]  # Admin is redundant here.
