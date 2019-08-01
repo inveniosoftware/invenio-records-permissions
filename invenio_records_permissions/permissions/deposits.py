@@ -8,7 +8,7 @@
 
 from ..generators import AnyUser, DepositOwners, GlobalCurators, \
     LocalCurators
-from .base import PermissionConfig
+from .base import _PermissionConfig
 from .records import RecordPermission
 
 """Access controls for deposits.
@@ -42,7 +42,7 @@ def deposit_delete_permission_factory(record):
     return RecordPermission(DepositPermissionConfig, 'delete')
 
 
-class DepositPermissionConfig(PermissionConfig):
+class DepositPermissionConfig(_PermissionConfig):
 
     can_list = [DepositOwners, LocalCurators]
     # FIXME: What is the purpouse of Action('deposit-create')?
