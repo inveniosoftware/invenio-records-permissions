@@ -39,6 +39,23 @@ class _PermissionConfig(object):
         return []
 
 
+# Where can a property be used?
+#
+# | Action | need | excludes | query_filter |
+# |--------|------|----------|--------------|
+# | create |   x  |     x    |              |
+# |--------|------|----------|--------------|
+# |  list  |   x  |     x    |              |
+# |--------|------|----------|--------------|
+# |  read  |   x  |     x    |       x      |
+# |--------|------|----------|--------------|
+# | update |   x  |     x    |              |
+# |--------|------|----------|--------------|
+# | delete |   x  |     x    |              |
+# |--------|------|----------|--------------|
+#
+
+
 class BasePermission(Permission):
 
     # FIXME: Default action?
@@ -56,7 +73,7 @@ class BasePermission(Permission):
             tmp_need = needs_generator.needs()
             if tmp_need:
                 needs.extend(tmp_need)
-
+        # FIXME: Shall they be expended?
         return needs
 
     @property
@@ -68,11 +85,12 @@ class BasePermission(Permission):
             tmp_exclude = excludes_generator.excludes()
             if tmp_exclude:
                 excludes.extend(tmp_exclude)
-
+        # FIXME: Shall they be expended?
         return excludes
 
     @property
     def query_filter(self):
+        # FIXME: try to work with the identity.provides.
         query_filters = []
         for qf_generator in self.permission_list:
             tmp_query_filter = qf_generator.query_filter()
