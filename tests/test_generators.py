@@ -40,7 +40,9 @@ def test_deny():
 
     assert need.excludes() == [any_user]
     assert need.needs() is None
-    assert need.query_filter().to_dict() == {'match_none': {}}
+    assert need.query_filter().to_dict() == {
+        'bool': {'must_not': [{'match_all': {}}]}
+    }
 
 
 def test_admin():
@@ -81,10 +83,10 @@ def test_record_need():
 
     assert need.needs(record) is None
     assert need.excludes(record) is None
-    assert need.query_filter(None) is None
+    assert need.query_filter() is None
 
 
-def test_record_owner():
+def test_record_owner(app):
     need = RecordOwners
 
     # Needs from a record
@@ -94,14 +96,10 @@ def test_record_owner():
     assert UserNeed(2) in needs
     assert UserNeed(3) in needs
 
-    # Needs when the records is none (i.e. list action)
-    assert need.needs(None) is None
-
     assert need.excludes(record) is None
-    assert need.excludes(None) is None
 
-    assert need.query_filter(User()).to_dict() == {'term': {'owners': 1}}
-    assert need.query_filter(None) is None
+    # FIXME: push user to context
+    assert need.query_filter().to_dict() == {'term': {'owners': 1}}
 
 
 def test_deposit_owner():
@@ -113,16 +111,12 @@ def test_deposit_owner():
     assert UserNeed(1) in needs
     assert UserNeed(2) in needs
 
-    # Needs when the records is none (i.e. list action)
-    assert need.needs(None) is None
-
     assert need.excludes(record) is None
-    assert need.excludes(None) is None
 
-    assert need.query_filter(User()).to_dict() == {
+    # FIXME: push user to context
+    assert need.query_filter().to_dict() == {
         'term': {'deposits.owners': 1}
     }
-    assert need.query_filter(None) is None
 
 
 private_record = copy.deepcopy(record)
@@ -136,11 +130,9 @@ private_record["access_right"] = "restricted"
 def test_any_user_if_public():
     need = AnyUserIfPublic
 
-    assert need.needs(None) == [any_user]
     assert need.needs(record) == [any_user]
     assert need.needs(private_record) is None
 
-    assert need.excludes(None) is None
     assert need.excludes(record) is None
     assert need.excludes(private_record) is None
 
@@ -160,12 +152,10 @@ private_files_record["access_right"] = "restricted"
 def test_any_user_if_public_files():
     need = AnyUserIfPublicFiles
 
-    assert need.needs(None) == [any_user]
     assert need.needs(record) == [any_user]
     assert need.needs(private_record) is None
     assert need.needs(private_files_record) is None
 
-    assert need.excludes(None) is None
     assert need.excludes(record) is None
     assert need.excludes(private_record) is None
     assert need.excludes(private_files_record) is None
@@ -189,11 +179,9 @@ def test_custom_if_public():
         lambda *args: Q()
     )
 
-    assert need.needs(None) == [any_user]
     assert need.needs(if_public_record) == [any_user]  # public, 1 is no owner
     assert need.needs(record) is None  # private, 1 is owner
 
-    assert need.excludes(None) is None
     assert need.excludes(record) is None
     assert need.excludes(if_public_record) is None
 

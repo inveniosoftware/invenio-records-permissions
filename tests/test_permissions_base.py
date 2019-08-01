@@ -19,7 +19,7 @@ class TestPermissionConfig(_PermissionConfig):
     can_read = [AnyUser]
 
 
-def test_permission_config():
+def test_permission_config(app):
 
     config = _PermissionConfig
     assert config.get_permission_list('create') == [Deny]
@@ -27,11 +27,10 @@ def test_permission_config():
     assert config.get_permission_list('read') == [Deny]
     assert config.get_permission_list('update') == [Deny]
     assert config.get_permission_list('delete') == [Deny]
-    # FIXME: needs app fixture
-    # assert config.get_permission_list('random') == []
+    assert config.get_permission_list('random') == []
 
 
-def test_custom_permission_config():
+def test_custom_permission_config(app):
     config = TestPermissionConfig
 
     assert config.get_permission_list('create') == [AnyUser]
@@ -39,8 +38,7 @@ def test_custom_permission_config():
     assert config.get_permission_list('read') == [AnyUser]
     assert config.get_permission_list('update') == [Deny]
     assert config.get_permission_list('delete') == [Deny]
-    # FIXME: needs app fixture
-    # assert config.get_permission_list('random') == []
+    assert config.get_permission_list('random') == []
 
 
 def test_base_permission():
@@ -52,11 +50,9 @@ def test_base_permission():
 
     assert create_perm.needs == [any_user]
     assert create_perm.excludes == []
-    assert create_perm.query_filter == [Q('match_all')]
 
     assert list_perm.needs == [any_user]
     assert list_perm.excludes == []
-    assert list_perm.query_filter == [Q('match_all')]
 
     assert read_perm.needs == [any_user]
     assert read_perm.excludes == []
@@ -64,8 +60,6 @@ def test_base_permission():
 
     assert update_perm.needs == []
     assert update_perm.excludes == [any_user]
-    assert update_perm.query_filter == [~Q('match_all')]
 
     assert delete_perm.needs == []
     assert delete_perm.excludes == [any_user]
-    assert delete_perm.query_filter == [~Q('match_all')]

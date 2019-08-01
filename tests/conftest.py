@@ -20,6 +20,9 @@ import tempfile
 import pytest
 from flask import Flask
 from flask_babelex import Babel
+from invenio_access import InvenioAccess
+from invenio_db import InvenioDB
+from invenio_search import InvenioSearch
 
 from invenio_records_permissions import InvenioRecordsPermissions
 from invenio_records_permissions.views import blueprint
@@ -41,7 +44,10 @@ def create_app(instance_path):
         app = Flask('testapp', instance_path=instance_path)
         app.config.update(**config)
         Babel(app)
+        InvenioAccess(app)
+        InvenioDB(app)
         InvenioRecordsPermissions(app)
+        InvenioSearch(app)
         app.register_blueprint(blueprint)
         return app
     return factory
