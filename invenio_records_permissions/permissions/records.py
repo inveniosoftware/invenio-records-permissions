@@ -49,7 +49,7 @@ def record_read_permission_factory(record=None):
     return RecordPermission(_Config.config(), 'read', record)
 
 
-def record_read_files_permission_factory(record=None):
+def record_read_files_permission_factory(record=None, *args):
     return RecordPermission(_Config.config(), 'read_files', record)
 
 
@@ -82,6 +82,8 @@ class RecordPermissionConfig(_PermissionConfig):
     can_list = [AnyUser]
     can_create = [Deny]
     can_read = [AnyUserIfPublic, RecordOwners]
+    # FIXME: Need to refactor the files perm factory
+    # It need to handle the reception of (bucket, action) instead of a record
     can_read_files = [AnyUserIfPublicFiles, RecordOwners]
     can_update = [RecordOwners]
     can_delete = [Admin]
@@ -104,7 +106,6 @@ class RecordPermissionConfig(_PermissionConfig):
         current_app.logger.error("Unkown action {action}.".format(
             action=action))
         return []
-
 
 
 class RecordPermission(BasePermission):

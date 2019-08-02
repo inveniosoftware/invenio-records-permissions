@@ -6,10 +6,11 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-from elasticsearch_dsl.query import Q
 from flask import current_app
 from invenio_access import Permission
 from ..generators import Deny
+
+# FIXME: Shall I create a default factory? I dont think it will ever be used.
 
 
 class _PermissionConfig(object):
