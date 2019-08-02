@@ -43,8 +43,8 @@ def test_record_permission(app):
     # FIXME: super user allowd but all exclude, would superuser be allowed
     assert create_perm.needs == {test_superuser_access}
     # FIXME: will fail because invenio-access adds all in 'needs'
-    # https://github.com/inveniosoftware/invenio-access/blob/master/invenio_access/permissions.py#L163
-    #assert create_perm.excludes == {test_any_user}
+    # https://github.com/inveniosoftware/invenio-access/blob/master/invenio_access/permissions.py#L126
+    assert create_perm.excludes == {test_any_user}
 
     # Loading permissions in invenio-access always add superuser
     assert list_perm.needs == {test_superuser_access, test_any_user}
