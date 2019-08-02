@@ -90,7 +90,6 @@ class BasePermission(Permission):
 
     @property
     def query_filter(self):
-        # FIXME: try to work with the identity.provides.
         query_filters = []
         for qf_generator in self.permission_list:
             tmp_query_filter = qf_generator.query_filter()

@@ -7,7 +7,7 @@
 # more details.
 
 from flask import current_app
-from flask_login import current_user
+from werkzeug.utils import import_string
 
 from ..generators import Admin, AnyUserIfPublic, AnyUserIfPublicFiles, Deny, \
     _NeedClass, _RecordNeedClass, RecordOwners
@@ -17,33 +17,48 @@ from .base import BasePermission, _PermissionConfig
 from ..generators import AnyUser
 ####
 
-# FIXME: Make configuration classes configurable (e.g. import_string)
+
+class _Config(object):
+
+    _config = None
+
+    @classmethod
+    def config(cls):
+        if not cls._config:
+            class_name = current_app.config.get(
+                'RECORDS_PERMISSIONS_RECORD_FACTORY'
+            )
+            if class_name:
+                cls._config = import_string(class_name)
+            else:
+                cls._config = RecordPermissionConfig
+        return cls._config
+
+
 # Record factories
 def record_list_permission_factory(record=None):
     # FIXME: Permanent None for the ``record`` to the RecordPermission?
-    return RecordPermission(RecordPermissionConfig, 'list', record)
+    return RecordPermission(_Config.config(), 'list', record)
 
 
 def record_create_permission_factory(record=None):
-    return RecordPermission(RecordPermissionConfig, 'create', record)
+    return RecordPermission(_Config.config(), 'create', record)
 
 
 def record_read_permission_factory(record=None):
-    # Config and action separated to give access to the config in the
-    # generators.
-    return RecordPermission(RecordPermissionConfig, 'read', record)
+    return RecordPermission(_Config.config(), 'read', record)
 
 
 def record_read_files_permission_factory(record=None):
-    return RecordPermission(RecordPermissionConfig, 'read_files', record)
+    return RecordPermission(_Config.config(), 'read_files', record)
 
 
 def record_update_permission_factory(record=None):
-    return RecordPermission(RecordPermissionConfig, 'update', record)
+    return RecordPermission(_Config.config(), 'update', record)
 
 
 def record_delete_permission_factory(record=None):
-    return RecordPermission(RecordPermissionConfig, 'delete', record)
+    return RecordPermission(_Config.config(), 'delete', record)
 
 
 @staticmethod

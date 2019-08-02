@@ -44,6 +44,11 @@ setup_requires = [
 install_requires = [
     'Flask-BabelEx>=0.9.3',
     'Flask-Principal>=0.4.0,<0.5.0',
+    'invenio-access>=1.1.0,<1.2.0',
+    # FIXME: Only needed for tests, to initialize DB
+    # Also Q is widely used, but only ``elasticsearch_dsl`` is needed
+    'invenio-db[postgresql]>=1.0.0, < 1.1.0',
+    'invenio-search[elasticsearch6]>=1.2.0, <1.3.0',
 ]
 
 packages = find_packages()
