@@ -73,8 +73,11 @@ class BasePermission(Permission):
             tmp_need = needs_generator.needs()
             if tmp_need:
                 needs.extend(tmp_need)
-        # FIXME: Shall they be expended?
-        return needs
+
+        self.explicit_needs = self.explicit_needs.union(needs)
+        self._load_permissions()
+
+        return self._permissions.needs
 
     @property
     def excludes(self):
@@ -85,8 +88,11 @@ class BasePermission(Permission):
             tmp_exclude = excludes_generator.excludes()
             if tmp_exclude:
                 excludes.extend(tmp_exclude)
-        # FIXME: Shall they be expended?
-        return excludes
+
+        self.explicit_needs = self.explicit_needs.union(excludes)
+        self._load_permissions()
+
+        return self._permissions.excludes
 
     @property
     def query_filter(self):
