@@ -9,7 +9,7 @@
 from invenio_records_permissions.permissions.base import _PermissionConfig, \
     BasePermission
 from invenio_records_permissions.generators import AnyUser, Deny
-from invenio_access.permissions import any_user
+from invenio_access.permissions import any_user, superuser_access
 from elasticsearch_dsl import Q
 
 
@@ -48,18 +48,22 @@ def test_base_permission():
     update_perm = BasePermission(TestPermissionConfig, 'update')
     delete_perm = BasePermission(TestPermissionConfig, 'delete')
 
-    assert create_perm.needs == [any_user]
-    assert create_perm.excludes == []
+    assert create_perm.needs == {superuser_access, any_user}
+    assert create_perm.excludes == set()
 
-    assert list_perm.needs == [any_user]
-    assert list_perm.excludes == []
+    assert list_perm.needs == {superuser_access, any_user}
+    assert list_perm.excludes == set()
 
-    assert read_perm.needs == [any_user]
-    assert read_perm.excludes == []
+    assert read_perm.needs == {superuser_access, any_user}
+    assert read_perm.excludes == set()
     assert read_perm.query_filter == [Q('match_all')]
 
-    assert update_perm.needs == []
-    assert update_perm.excludes == [any_user]
+    assert update_perm.needs == {superuser_access}
+    # FIXME: will fail because invenio-access adds all in 'needs'
+    # https://github.com/inveniosoftware/invenio-access/issues/165
+    assert update_perm.excludes == {any_user}
 
-    assert delete_perm.needs == []
-    assert delete_perm.excludes == [any_user]
+    assert delete_perm.needs == {superuser_access}
+    # FIXME: will fail because invenio-access adds all in 'needs'
+    # https://github.com/inveniosoftware/invenio-access/issues/165
+    assert delete_perm.excludes == {any_user}

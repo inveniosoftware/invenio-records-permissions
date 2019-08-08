@@ -11,6 +11,7 @@ from invenio_records_permissions.permissions.records import \
     record_create_permission_factory, record_list_permission_factory, \
     record_read_permission_factory, record_update_permission_factory, \
     record_delete_permission_factory, record_read_files_permission_factory
+from invenio_access.permissions import any_user, superuser_access
 from elasticsearch_dsl import Q
 
 record = {
@@ -27,9 +28,6 @@ record = {
     }
 }
 
-test_superuser_access = Need(method='action', value='superuser-access')
-test_any_user = Need(method='system_role', value='any_user')
-
 
 def test_record_permission(app):
 
@@ -40,18 +38,17 @@ def test_record_permission(app):
     update_perm = record_update_permission_factory(record)
     delete_perm = record_delete_permission_factory(record)
 
-    # FIXME: super user allowd but all exclude, would superuser be allowed
-    assert create_perm.needs == {test_superuser_access}
+    assert create_perm.needs == {superuser_access}
     # FIXME: will fail because invenio-access adds all in 'needs'
-    # https://github.com/inveniosoftware/invenio-access/blob/master/invenio_access/permissions.py#L126
-    assert create_perm.excludes == {test_any_user}
+    # https://github.com/inveniosoftware/invenio-access/issues/165
+    assert create_perm.excludes == {any_user}
 
     # Loading permissions in invenio-access always add superuser
-    assert list_perm.needs == {test_superuser_access, test_any_user}
+    assert list_perm.needs == {superuser_access, any_user}
     assert list_perm.excludes == set()
 
     assert read_perm.needs == {
-        test_superuser_access,
+        superuser_access,
         UserNeed(1),
         UserNeed(2),
         UserNeed(3)
@@ -63,13 +60,12 @@ def test_record_permission(app):
     ]
 
     assert read_files_perm.needs == {
-        test_superuser_access,
+        superuser_access,
         UserNeed(1),
         UserNeed(2),
         UserNeed(3)
     }
     assert read_perm.excludes == set()
-    # FIXME: read_files makes sense to query_filter?
 
     update_needs = update_perm.needs
     assert len(update_needs) == 3

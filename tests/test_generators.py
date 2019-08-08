@@ -8,12 +8,12 @@
 
 import copy
 
+from invenio_access.permissions import any_user
 from invenio_records_permissions.generators import Admin, AnyUser, \
     AnyUserIfPublic, AnyUserIfPublicFiles, Deny, DepositOwners, \
     IfPublicFactory, _NeedClass, _RecordNeedClass, RecordOwners
-from invenio_access.permissions import any_user
-from flask_principal import UserNeed, ActionNeed
 from elasticsearch_dsl import Q
+from flask_principal import UserNeed, ActionNeed
 
 
 def test_need():
@@ -69,15 +69,6 @@ record = {
 }
 
 
-class User(object):
-
-    def get_id(self):
-        return 1
-
-    def is_authenticated(self):
-        return True
-
-
 def test_record_need():
     need = _RecordNeedClass()
 
@@ -98,11 +89,17 @@ def test_record_owner(app):
 
     assert need.excludes(record) is None
 
-    # FIXME: push user to context
-    assert need.query_filter().to_dict() == {'term': {'owners': 1}}
+    with app.test_request_context():
+        # Unauthenticated client
+        with app.test_client() as client:
+            client.get('/')
+            assert not need.query_filter()
+
+        # TODO: use a fixture with an authenticated client
+        # assert need.query_filter().to_dict() == {'term': {'owners': 1}}
 
 
-def test_deposit_owner():
+def test_deposit_owner(app):
     need = DepositOwners
 
     # Needs from a record
@@ -113,10 +110,15 @@ def test_deposit_owner():
 
     assert need.excludes(record) is None
 
-    # FIXME: push user to context
-    assert need.query_filter().to_dict() == {
-        'term': {'deposits.owners': 1}
-    }
+    with app.test_request_context():
+        with app.test_client() as client:
+            client.get('/')
+            assert not need.query_filter()
+
+        # TODO: use a fixture with an authenticated client
+        # assert need.query_filter().to_dict() == {
+        #     'term': {'deposits.owners': 1}
+        # }
 
 
 private_record = copy.deepcopy(record)
@@ -130,11 +132,11 @@ private_record["access_right"] = "restricted"
 def test_any_user_if_public():
     need = AnyUserIfPublic
 
-    assert need.needs(record) == [any_user]
-    assert need.needs(private_record) is None
+    assert need.needs(record=record) == [any_user]
+    assert need.needs(record=private_record) is None
 
-    assert need.excludes(record) is None
-    assert need.excludes(private_record) is None
+    assert need.excludes(record=record) is None
+    assert need.excludes(record=private_record) is None
 
     assert need.query_filter().to_dict() == {
         'term': {'_access.metadata_restricted': False}
@@ -152,13 +154,14 @@ private_files_record["access_right"] = "restricted"
 def test_any_user_if_public_files():
     need = AnyUserIfPublicFiles
 
-    assert need.needs(record) == [any_user]
-    assert need.needs(private_record) is None
-    assert need.needs(private_files_record) is None
+    # FIXME: This should receive a bucket
+    assert need.needs(record=record) == [any_user]
+    assert need.needs(record=private_record) is None
+    assert need.needs(record=private_files_record) is None
 
-    assert need.excludes(record) is None
-    assert need.excludes(private_record) is None
-    assert need.excludes(private_files_record) is None
+    assert need.excludes(record=record) is None
+    assert need.excludes(record=private_record) is None
+    assert need.excludes(record=private_files_record) is None
 
     assert need.query_filter().to_dict() == {'bool': {
         'must': [
@@ -175,8 +178,8 @@ if_public_record["owners"] = [4, 5]
 
 def test_custom_if_public():
     need = IfPublicFactory(
-        lambda r: 1 in r["owners"],
-        lambda *args: Q()
+        lambda r, b, *args, **kwargs: 1 in r["owners"],
+        lambda r, b, *args, **kwargs: Q()
     )
 
     assert need.needs(if_public_record) == [any_user]  # public, 1 is no owner
