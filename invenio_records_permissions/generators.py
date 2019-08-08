@@ -6,10 +6,15 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
+import json
+
 from elasticsearch_dsl.query import Q
-from invenio_access.permissions import any_user
 from flask import g
-from flask_principal import UserNeed, ActionNeed
+from flask_principal import ActionNeed, UserNeed
+from invenio_access.permissions import any_user
+from invenio_files_rest.models import Bucket, ObjectVersion
+from invenio_records_files.api import Record
+from invenio_records_files.models import RecordsBuckets
 
 
 class _NeedClass(object):
@@ -122,38 +127,106 @@ class _DepositOwners(_RecordNeedClass):
 DepositOwners = _DepositOwners()
 
 
-class IfPublicFactory(_RecordNeedClass):
+class IfPublicRecordFactory(_RecordNeedClass):
 
     def __init__(self, is_restricted, es_filter):
-        super(IfPublicFactory, self).__init__()
+        super(IfPublicRecordFactory, self).__init__()
         self.is_restricted = is_restricted
         self.es_filter = es_filter
 
-    def needs(self, record):
-        if not self.is_restricted(record):
+    def needs(self, record, *args, **kwargs):
+        if not self.is_restricted(record, *args, **kwargs):
             return [any_user]
         else:
             return None
 
-    def query_filter(self, *args):
-        return self.es_filter(*args)
+    def excludes(self, record, *args, **kwargs):
+        pass
+
+    def query_filter(self, *args, **kwargs):
+        return self.es_filter(*args, **kwargs)
 
 
-def _is_restricted(record):
-    return record['_access']['metadata_restricted']
+def _is_restricted(record, *args, **kwargs):
+    if record:
+        # FIXME: this should be caster to boolean when loaded
+        return json.loads(record['_access']['metadata_restricted'])
+
+    return True  # Restrict by default
 
 
-def _is_restricted_filter(*args):
+def _is_restricted_filter(*args, **kwargs):
     return Q('term', **{"_access.metadata_restricted": False})
 
 
-AnyUserIfPublic = IfPublicFactory(_is_restricted, _is_restricted_filter)
+AnyUserIfPublic = IfPublicRecordFactory(_is_restricted, _is_restricted_filter)
 
 
-def _is_files_restricted(record):
-    if _is_restricted(record) or record['access_right'] != 'open':
-        return True
-    return record['_access']['files_restricted']
+class _BucketNeedClass(_NeedClass):
+
+    def __init__(self):
+        super(_BucketNeedClass, self).__init__()
+
+    def needs(self, bucket, *args, **kwargs):
+        pass
+
+    def excludes(self, bucket, *args, **kwargs):
+        pass
+
+    def query_filter(self, *args, **kwargs):
+        pass
+
+
+class IfPublicBucketFactory(_BucketNeedClass):
+
+    def __init__(self, is_restricted, es_filter):
+        super(IfPublicBucketFactory, self).__init__()
+        self.is_restricted = is_restricted
+        self.es_filter = es_filter
+
+    def needs(self, bucket, *args, **kwargs):
+        if not self.is_restricted(bucket, *args, **kwargs):
+            return [any_user]
+        else:
+            return None
+
+    def excludes(self, bucket, *args, **kwargs):
+        pass
+
+    def query_filter(self, *args, **kwargs):
+        return self.es_filter(*args, **kwargs)
+
+
+# FIXME: Adapt to the files factory
+def _get_record_from_bucket(bucket_id):
+    rbs = RecordsBuckets.query.filter_by(bucket_id=bucket_id).all()
+    if len(rbs) >= 2:  # Extra formats bucket or bad records-buckets state
+        # Only admins should access. Users use the ".../formats" endpoints
+        return None
+    rb = next(iter(rbs), None)  # Use first bucket
+    if rb:
+        return Record.get_record(rb.record_id)
+
+
+def _is_files_restricted(bucket, *args, **kwargs):
+    # FIXME: Its inconsistent, upon creation it receives a bucket with ``id`` field
+    # In the get case the field is called ``bucket_id``.
+    _record = None
+    if isinstance(bucket, ObjectVersion):
+        _record = _get_record_from_bucket(bucket.bucket_id)
+    elif isinstance(bucket, Bucket):
+        _record = _get_record_from_bucket(bucket.id)
+    else:
+        print(bucket.__class__.__name__)
+
+    if _record:
+        if _is_restricted(record=_record) or _record['access_right'] != 'open':
+            return True
+
+        # FIXME: this should be caster to boolean when loaded
+        return json.loads(_record['_access']['files_restricted'])
+
+    return True  # Restrict by default
 
 #
 # | Meta Restricted | Files Restricted | Access Right | Result |
@@ -177,14 +250,14 @@ def _is_files_restricted(record):
 #
 
 
-def _is_files_restricted_filter(*args):
+def _is_files_restricted_filter(*args, **kwargs):
     files_restricted = Q('term', **{"_access.files_restricted": False})
     access_rights = Q('term', access_right='open')
 
     return _is_restricted_filter() & files_restricted & access_rights
 
 
-AnyUserIfPublicFiles = IfPublicFactory(
+AnyUserIfPublicFiles = IfPublicBucketFactory(
     _is_files_restricted,
     _is_files_restricted_filter
 )

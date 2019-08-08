@@ -10,8 +10,6 @@ from flask import current_app
 from invenio_access import Permission
 from ..generators import Deny
 
-# FIXME: Shall I create a default factory? I dont think it will ever be used.
-
 
 class _PermissionConfig(object):
 
@@ -42,25 +40,26 @@ class _PermissionConfig(object):
 
 # Where can a property be used?
 #
-# | Action | need | excludes | query_filter |
-# |--------|------|----------|--------------|
-# | create |   x  |     x    |              |
-# |--------|------|----------|--------------|
-# |  list  |   x  |     x    |              |
-# |--------|------|----------|--------------|
-# |  read  |   x  |     x    |       x      |
-# |--------|------|----------|--------------|
-# | update |   x  |     x    |              |
-# |--------|------|----------|--------------|
-# | delete |   x  |     x    |              |
-# |--------|------|----------|--------------|
+# |    Action   | need | excludes | query_filter |
+# |-------------|------|----------|--------------|
+# |    create   |   x  |     x    |              |
+# |-------------|------|----------|--------------|
+# |     list    |   x  |     x    |              |
+# |-------------|------|----------|--------------|
+# |     read    |   x  |     x    |       x      |
+# |-------------|------|----------|--------------|
+# | read files  |   x  |     x    |              |
+# |-------------|------|----------|--------------|
+# |    update   |   x  |     x    |              |
+# |-------------|------|----------|--------------|
+# |    delete   |   x  |     x    |              |
+# |-------------|------|----------|--------------|
 #
 
 
 class BasePermission(Permission):
 
-    # FIXME: Default action?
-    def __init__(self, config=_PermissionConfig, action=None):
+    def __init__(self, config, action):
         super(BasePermission, self).__init__()
         self.config = config
         self.permission_list = self.config.get_permission_list(action)

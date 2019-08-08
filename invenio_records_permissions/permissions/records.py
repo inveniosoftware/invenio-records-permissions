@@ -9,9 +9,10 @@
 from flask import current_app
 from werkzeug.utils import import_string
 
-from ..generators import Admin, AnyUserIfPublic, AnyUserIfPublicFiles, Deny, \
-    _NeedClass, _RecordNeedClass, RecordOwners
 from .base import BasePermission, _PermissionConfig
+from ..errors import UnknownGeneratorError
+from ..generators import Admin, AnyUserIfPublic, AnyUserIfPublicFiles, \
+    _BucketNeedClass, Deny, _NeedClass, _RecordNeedClass, RecordOwners
 
 # REMOVE
 from ..generators import AnyUser
@@ -36,34 +37,53 @@ class _Config(object):
 
 
 # Record factories
-def record_list_permission_factory(record=None):
-    # FIXME: Permanent None for the ``record`` to the RecordPermission?
-    return RecordPermission(_Config.config(), 'list', record)
+def record_list_permission_factory(*args, **kwargs):
+    return RecordPermission(action='list', config=_Config.config())
 
 
 def record_create_permission_factory(record=None):
-    return RecordPermission(_Config.config(), 'create', record)
+    return RecordPermission(
+        action='create',
+        config=_Config.config(),
+        record=record
+    )
 
 
 def record_read_permission_factory(record=None):
-    return RecordPermission(_Config.config(), 'read', record)
+    return RecordPermission(
+        action='read',
+        config=_Config.config(),
+        record=record
+    )
 
 
-def record_read_files_permission_factory(record=None, *args):
-    return RecordPermission(_Config.config(), 'read_files', record)
+def record_read_files_permission_factory(bucket=None, *args):
+    return RecordPermission(
+        action='read_files',
+        config=_Config.config(),
+        bucket=bucket
+    )
 
 
 def record_update_permission_factory(record=None):
-    return RecordPermission(_Config.config(), 'update', record)
+    return RecordPermission(
+        action='update',
+        config=_Config.config(),
+        record=record
+    )
 
 
 def record_delete_permission_factory(record=None):
-    return RecordPermission(_Config.config(), 'delete', record)
+    return RecordPermission(
+        action='delete',
+        config=_Config.config(),
+        record=record
+    )
 
 
 @staticmethod
-def _log_unknwon_generator(class_name):
-    current_app.logger.error("Unkown need generator class. {name}".format(
+def _unknwon_generator(class_name):
+    raise UnknownGeneratorError("Unkown need generator class. {name}".format(
             name=class_name) + " is not one of [RecordNeedClass, NeedClass]"
     )
 
@@ -74,7 +94,8 @@ class RecordPermissionConfig(_PermissionConfig):
     Note that even if the array is empty, the invenio_access Permission class
     always adds the ``superuser-access``, so admins will always be allowed.
 
-    - Create action given to no one.
+    - Create action given to no one. Not even superusers. To achieve this
+      behaviour you need to define a ``Superuser`` need generator.
     - Read access given to everyone.
     - Update access given to record owners.
     - Delete access given to admins only.
@@ -82,8 +103,6 @@ class RecordPermissionConfig(_PermissionConfig):
     can_list = [AnyUser]
     can_create = [Deny]
     can_read = [AnyUserIfPublic, RecordOwners]
-    # FIXME: Need to refactor the files perm factory
-    # It need to handle the reception of (bucket, action) instead of a record
     can_read_files = [AnyUserIfPublicFiles, RecordOwners]
     can_update = [RecordOwners]
     can_delete = [Admin]
@@ -110,9 +129,11 @@ class RecordPermissionConfig(_PermissionConfig):
 
 class RecordPermission(BasePermission):
 
-    def __init__(self, config=RecordPermissionConfig, action=None, record=None):
+    def __init__(self, action, config=RecordPermissionConfig, record=None,
+                 bucket=None):
         super(RecordPermission, self).__init__(config, action)
         self.record = record
+        self.bucket = bucket
 
     @property
     def needs(self):
@@ -121,11 +142,12 @@ class RecordPermission(BasePermission):
             tmp_needs = None
             if isinstance(needs_generator, _RecordNeedClass):
                 tmp_needs = needs_generator.needs(self.record)
+            elif isinstance(needs_generator, _BucketNeedClass):
+                tmp_needs = needs_generator.needs(self.bucket)
             elif isinstance(needs_generator, _NeedClass):
                 tmp_needs = needs_generator.needs()
             else:
-                # FIXME: Shall it raise and complain?
-                _log_unknwon_generator(type(needs_generator).__name__)
+                _unknwon_generator(type(needs_generator).__name__)
 
             if tmp_needs:
                 needs.extend(tmp_needs)
@@ -142,11 +164,12 @@ class RecordPermission(BasePermission):
             tmp_excludes = None
             if isinstance(needs_generator, _RecordNeedClass):
                 tmp_excludes = needs_generator.excludes(self.record)
+            elif isinstance(needs_generator, _BucketNeedClass):
+                tmp_excludes = needs_generator.needs(self.bucket)
             elif isinstance(needs_generator, _NeedClass):
                 tmp_excludes = needs_generator.excludes()
             else:
-                # FIXME: Shall it raise and complain?
-                _log_unknwon_generator(type(needs_generator).__name__)
+                _unknwon_generator(type(needs_generator).__name__)
 
             if tmp_excludes:
                 excludes.extend(tmp_excludes)
@@ -166,8 +189,7 @@ class RecordPermission(BasePermission):
             elif isinstance(qf_generator, _NeedClass):
                 tmp_query_filter = qf_generator.query_filter()
             else:
-                # FIXME: Shall it raise and complain?
-                _log_unknwon_generator(type(qf_generator).__name__)
+                _unknwon_generator(type(qf_generator).__name__)
 
             if tmp_query_filter:
                 query_filters.append(tmp_query_filter)
