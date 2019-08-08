@@ -23,9 +23,30 @@ tests_require = [
     'pytest-cov>=2.5.1',
     'pytest-pep8>=1.0.6',
     'pytest-invenio>=1.0.5',
+    'invenio-accounts>=1.1.1,<1.2.0'
 ]
 
+invenio_search_version = '1.2.0'
+
 extras_require = {
+    'elasticsearch5': [
+        'invenio-search[elasticsearch5]>={}'.format(invenio_search_version),
+    ],
+    'elasticsearch6': [
+        'invenio-search[elasticsearch6]>={}'.format(invenio_search_version),
+    ],
+    'elasticsearch7': [
+        'invenio-search[elasticsearch7]>={}'.format(invenio_search_version),
+    ],
+    'mysql': [
+        'invenio-db[mysql,versioning]>=1.0.0',
+    ],
+    'postgresql': [
+        'invenio-db[postgresql,versioning]>=1.0.0',
+    ],
+    'sqlite': [
+        'invenio-db[versioning]>=1.0.0',
+    ],
     'docs': [
         'Sphinx>=1.5.1',
     ],
@@ -33,7 +54,11 @@ extras_require = {
 }
 
 extras_require['all'] = []
-for reqs in extras_require.values():
+for name, reqs in extras_require.items():
+    if name[0] == ':' or name in ('elasticsearch5', 'elasticsearch6',
+                                  'elasticsearch7', 'mysql', 'postgresql',
+                                  'sqlite'):
+        continue
     extras_require['all'].extend(reqs)
 
 setup_requires = [
@@ -45,10 +70,7 @@ install_requires = [
     'Flask-BabelEx>=0.9.3',
     'Flask-Principal>=0.4.0,<0.5.0',
     'invenio-access>=1.1.0,<1.2.0',
-    # FIXME: Only needed for tests, to initialize DB
-    # Also Q is widely used, but only ``elasticsearch_dsl`` is needed
-    'invenio-db[postgresql]>=1.0.0, < 1.1.0',
-    'invenio-search[elasticsearch6]>=1.2.0, <1.3.0',
+    'invenio-records-files==1.1.1'
 ]
 
 packages = find_packages()
