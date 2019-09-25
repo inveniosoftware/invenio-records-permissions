@@ -6,47 +6,48 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-from invenio_records_permissions.permissions.base import _PermissionConfig, \
-    BasePermission
-from invenio_records_permissions.generators import AnyUser, Deny
-from invenio_access.permissions import any_user, superuser_access
 from elasticsearch_dsl import Q
+from invenio_access.permissions import any_user, superuser_access
+
+from invenio_records_permissions.generators import AnyUser, Deny
+from invenio_records_permissions.policies import BasePermissionPolicy
 
 
-class TestPermissionConfig(_PermissionConfig):
-    can_create = [AnyUser]
-    can_list = [AnyUser]
-    can_read = [AnyUser]
+class TestPermissionPolicy(BasePermissionPolicy):
+    can_create = [AnyUser()]
+    can_list = [AnyUser()]
+    can_read = [AnyUser()]
+    can_foo_bar = [AnyUser()]
 
 
-def test_permission_config(app):
+def test_base_permission_policy(app):
+    policy = BasePermissionPolicy
 
-    config = _PermissionConfig
-    assert config.get_permission_list('create') == [Deny]
-    assert config.get_permission_list('list') == [Deny]
-    assert config.get_permission_list('read') == [Deny]
-    assert config.get_permission_list('update') == [Deny]
-    assert config.get_permission_list('delete') == [Deny]
-    assert config.get_permission_list('random') == []
+    for action in ['list', 'read', 'update', 'delete', 'random']:
+        generators = policy(action=action).generators
+
+        assert len(generators) == 0
 
 
-def test_custom_permission_config(app):
-    config = TestPermissionConfig
+def test_custom_permission_policy(app):
+    policy = TestPermissionPolicy
 
-    assert config.get_permission_list('create') == [AnyUser]
-    assert config.get_permission_list('list') == [AnyUser]
-    assert config.get_permission_list('read') == [AnyUser]
-    assert config.get_permission_list('update') == [Deny]
-    assert config.get_permission_list('delete') == [Deny]
-    assert config.get_permission_list('random') == []
+    assert isinstance(policy(action='create').generators[0], AnyUser)
+    assert isinstance(policy(action='list').generators[0], AnyUser)
+    assert isinstance(policy(action='read').generators[0], AnyUser)
+    assert isinstance(policy(action='foo_bar').generators[0], AnyUser)
+    assert len(policy(action='update').generators) == 0
+    assert len(policy(action='delete').generators) == 0
+    assert len(policy(action='random').generators) == 0
 
 
 def test_base_permission():
-    create_perm = BasePermission(TestPermissionConfig, 'create')
-    list_perm = BasePermission(TestPermissionConfig, 'list')
-    read_perm = BasePermission(TestPermissionConfig, 'read')
-    update_perm = BasePermission(TestPermissionConfig, 'update')
-    delete_perm = BasePermission(TestPermissionConfig, 'delete')
+    create_perm = TestPermissionPolicy(action='create')
+    list_perm = TestPermissionPolicy(action='list')
+    read_perm = TestPermissionPolicy(action='read')
+    update_perm = TestPermissionPolicy(action='update')
+    delete_perm = TestPermissionPolicy(action='delete')
+    foo_bar_perm = TestPermissionPolicy(action='foo_bar')
 
     assert create_perm.needs == {superuser_access, any_user}
     assert create_perm.excludes == set()
@@ -56,14 +57,17 @@ def test_base_permission():
 
     assert read_perm.needs == {superuser_access, any_user}
     assert read_perm.excludes == set()
-    assert read_perm.query_filter == [Q('match_all')]
+    assert read_perm.query_filters == [Q('match_all')]
 
     assert update_perm.needs == {superuser_access}
     # FIXME: will fail because invenio-access adds all in 'needs'
     # https://github.com/inveniosoftware/invenio-access/issues/165
-    assert update_perm.excludes == {any_user}
+    # assert update_perm.excludes == {any_user}
 
     assert delete_perm.needs == {superuser_access}
     # FIXME: will fail because invenio-access adds all in 'needs'
     # https://github.com/inveniosoftware/invenio-access/issues/165
-    assert delete_perm.excludes == {any_user}
+    # assert delete_perm.excludes == {any_user}
+
+    assert foo_bar_perm.needs == {superuser_access, any_user}
+    assert foo_bar_perm.excludes == set()

@@ -15,15 +15,19 @@ from setuptools import find_packages, setup
 readme = open('README.rst').read()
 history = open('CHANGES.rst').read()
 
+sphinx_require = 'Sphinx>=1.5.1'
+
 tests_require = [
     'check-manifest>=0.25',
     'coverage>=4.0',
     'isort>=4.3.3',
     'pydocstyle>=2.0.0',
     'pytest-cov>=2.5.1',
+    'pytest-mock>=1.6.0',
     'pytest-pep8>=1.0.6',
     'pytest-invenio>=1.0.5',
-    'invenio-accounts>=1.1.1,<1.2.0'
+    'invenio-accounts>=1.1.1,<1.2.0',
+    sphinx_require,
 ]
 
 invenio_search_version = '1.2.0'
@@ -48,7 +52,7 @@ extras_require = {
         'invenio-db[versioning]>=1.0.0',
     ],
     'docs': [
-        'Sphinx>=1.5.1',
+        sphinx_require,
     ],
     'tests': tests_require,
 }

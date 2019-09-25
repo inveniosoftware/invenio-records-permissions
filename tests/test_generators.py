@@ -8,52 +8,51 @@
 
 import copy
 
+from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user
+
 from invenio_records_permissions.generators import Admin, AnyUser, \
-    AnyUserIfPublic, AnyUserIfPublicFiles, Deny, DepositOwners, \
-    IfPublicFactory, _NeedClass, _RecordNeedClass, RecordOwners
-from elasticsearch_dsl import Q
-from flask_principal import UserNeed, ActionNeed
+    AnyUserIfPublic, Deny, Generator, RecordOwners
 
 
-def test_need():
+def test_generator():
+    generator = Generator()
 
-    need = _NeedClass()
-
-    assert need.needs() is None
-    assert need.excludes() is None
-    assert need.query_filter() is None
+    assert generator.needs() == []
+    assert generator.excludes() == []
+    assert generator.query_filter() == []
 
 
 def test_any_user():
+    generator = AnyUser()
 
-    need = AnyUser
-
-    assert need.needs() == [any_user]
-    assert need.excludes() is None
-    assert need.query_filter().to_dict() == {'match_all': {}}
+    assert generator.needs() == [any_user]
+    assert generator.excludes() == []
+    assert generator.query_filter().to_dict() == {'match_all': {}}
 
 
 def test_deny():
+    generator = Deny()
 
-    need = Deny
-
-    assert need.excludes() == [any_user]
-    assert need.needs() is None
-    assert need.query_filter().to_dict() == {
-        'bool': {'must_not': [{'match_all': {}}]}
-    }
+    assert generator.needs() == []
+    assert generator.excludes() == [any_user]
+    assert generator.query_filter().to_dict() in [
+        # ES 6-
+        {'bool': {'must_not': [{'match_all': {}}]}},
+        # ES 7+
+        {'match_none': {}}
+    ]
 
 
 def test_admin():
+    generator = Admin()
 
-    need = Admin
-
-    assert need.needs() == [ActionNeed('admin-access')]
-    assert need.excludes() is None
-    assert need.query_filter() is None
+    assert generator.needs() == [ActionNeed('admin-access')]
+    assert generator.excludes() == []
+    assert generator.query_filter() == []
 
 
+# TODO: Establish record schema
 record = {
     "_access": {
         "metadata_restricted": False,
@@ -69,123 +68,46 @@ record = {
 }
 
 
-def test_record_need():
-    need = _RecordNeedClass()
+def test_record_owner(mocker):
+    generator = RecordOwners()
 
-    assert need.needs(record) is None
-    assert need.excludes(record) is None
-    assert need.query_filter() is None
+    assert generator.needs(record=record) == [
+        UserNeed(1),
+        UserNeed(2),
+        UserNeed(3)
+    ]
+    assert generator.excludes(record=record) == []
 
+    # Anonymous identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = []
 
-def test_record_owner(app):
-    need = RecordOwners
+    assert not generator.query_filter()
 
-    # Needs from a record
-    needs = need.needs(record)
-    assert len(needs) == 3
-    assert UserNeed(1) in needs
-    assert UserNeed(2) in needs
-    assert UserNeed(3) in needs
+    # Authenticated identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
 
-    assert need.excludes(record) is None
-
-    with app.test_request_context():
-        # Unauthenticated client
-        with app.test_client() as client:
-            client.get('/')
-            assert not need.query_filter()
-
-        # TODO: use a fixture with an authenticated client
-        # assert need.query_filter().to_dict() == {'term': {'owners': 1}}
-
-
-def test_deposit_owner(app):
-    need = DepositOwners
-
-    # Needs from a record
-    needs = need.needs(record)
-    assert len(needs) == 2
-    assert UserNeed(1) in needs
-    assert UserNeed(2) in needs
-
-    assert need.excludes(record) is None
-
-    with app.test_request_context():
-        with app.test_client() as client:
-            client.get('/')
-            assert not need.query_filter()
-
-        # TODO: use a fixture with an authenticated client
-        # assert need.query_filter().to_dict() == {
-        #     'term': {'deposits.owners': 1}
-        # }
+    assert generator.query_filter().to_dict() == {'term': {'owners': 1}}
 
 
 private_record = copy.deepcopy(record)
 private_record["_access"] = {
-        "metadata_restricted": True,
-        "files_restricted": True
-    }
+    "metadata_restricted": True,
+    "files_restricted": True
+}
 private_record["access_right"] = "restricted"
 
 
 def test_any_user_if_public():
-    need = AnyUserIfPublic
+    generator = AnyUserIfPublic()
 
-    assert need.needs(record=record) == [any_user]
-    assert need.needs(record=private_record) is None
+    assert generator.needs(record=record) == [any_user]
+    assert generator.needs(record=private_record) == []
 
-    assert need.excludes(record=record) is None
-    assert need.excludes(record=private_record) is None
+    assert generator.excludes(record=record) == []
+    assert generator.excludes(record=private_record) == []
 
-    assert need.query_filter().to_dict() == {
+    assert generator.query_filter().to_dict() == {
         'term': {'_access.metadata_restricted': False}
     }
-
-
-private_files_record = copy.deepcopy(record)
-private_files_record["_access"] = {
-        "metadata_restricted": False,
-        "files_restricted": True
-    }
-private_files_record["access_right"] = "restricted"
-
-
-def test_any_user_if_public_files():
-    need = AnyUserIfPublicFiles
-
-    # FIXME: This should receive a bucket
-    assert need.needs(record=record) == [any_user]
-    assert need.needs(record=private_record) is None
-    assert need.needs(record=private_files_record) is None
-
-    assert need.excludes(record=record) is None
-    assert need.excludes(record=private_record) is None
-    assert need.excludes(record=private_files_record) is None
-
-    assert need.query_filter().to_dict() == {'bool': {
-        'must': [
-            {'term': {'_access.metadata_restricted': False}},
-            {'term': {'_access.files_restricted': False}},
-            {'term': {'access_right': 'open'}}
-        ]
-    }}
-
-
-if_public_record = copy.deepcopy(record)
-if_public_record["owners"] = [4, 5]
-
-
-def test_custom_if_public():
-    need = IfPublicFactory(
-        lambda r, b, *args, **kwargs: 1 in r["owners"],
-        lambda r, b, *args, **kwargs: Q()
-    )
-
-    assert need.needs(if_public_record) == [any_user]  # public, 1 is no owner
-    assert need.needs(record) is None  # private, 1 is owner
-
-    assert need.excludes(record) is None
-    assert need.excludes(if_public_record) is None
-
-    assert need.query_filter().to_dict() == {'match_all': {}}

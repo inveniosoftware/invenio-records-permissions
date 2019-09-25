@@ -24,6 +24,7 @@ from invenio_access import InvenioAccess
 from invenio_accounts import InvenioAccounts
 from invenio_db import InvenioDB
 from invenio_search import InvenioSearch
+
 from invenio_records_permissions import InvenioRecordsPermissions
 from invenio_records_permissions.views import blueprint
 

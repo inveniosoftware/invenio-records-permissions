@@ -1,10 +1,18 @@
 # -*- coding: utf-8 -*-
 #
+# This file is part of Invenio.
 # Copyright (C) 2019 CERN.
+# Copyright (C) 2019 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
+
+#FIXME see https://github.com/inveniosoftware/invenio-access/issues/129
+dist: trusty
+
+addons:
+  postgresql: 9.5
 
 notifications:
   email: false
@@ -16,32 +24,50 @@ language: python
 matrix:
   fast_finish: true
   allow_failures:
-    # To allow failures, you need to specify the full environment
-    - env: REQUIREMENTS=devel
+    - env: REQUIREMENTS=devel EXTRAS=all,postgresql,elasticsearch7 SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
 
 cache:
   - pip
 
+services:
+  - postgresql
+
 env:
-  - REQUIREMENTS=lowest
-  - REQUIREMENTS=release DEPLOY=true
-  - REQUIREMENTS=devel
+  global:
+    - ES6_DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-6.8.2.tar.gz"
+    - ES7_DOWNLOAD_URL="https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-7.3.0-linux-x86_64.tar.gz"
+    - ES_HOST=127.0.0.1
+    - SQLALCHEMY_DATABASE_URI="postgresql+psycopg2://postgres@localhost:5432/invenio"
+  matrix:
+    - REQUIREMENTS=lowest EXTRAS=all,postgresql,elasticsearch6 ES_URL=$ES6_DOWNLOAD_URL
+    - REQUIREMENTS=release EXTRAS=all,postgresql,elasticsearch6 ES_URL=$ES6_DOWNLOAD_URL
+    - REQUIREMENTS=release EXTRAS=all,postgresql,elasticsearch7 ES_URL=$ES7_DOWNLOAD_URL DEPLOY=true
+    - REQUIREMENTS=devel EXTRAS=all,postgresql,elasticsearch6 ES_URL=$ES6_DOWNLOAD_URL
+    - REQUIREMENTS=devel EXTRAS=all,postgresql,elasticsearch7 ES_URL=$ES7_DOWNLOAD_URL
 
 python:
-  - "2.7"
   - "3.5"
 
 before_install:
-  - "nvm install 6; nvm use 6"
+  - "mkdir /tmp/elasticsearch"
+  - "wget -O - $ES_URL | tar xz --directory=/tmp/elasticsearch --strip-components=1"
+  - "/tmp/elasticsearch/bin/elasticsearch > /tmp/local-es.log &"
   - "travis_retry pip install --upgrade pip setuptools py"
   - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder -e all --level=min setup.py > .travis-lowest-requirements.txt"
-  - "requirements-builder -e all --level=pypi setup.py > .travis-release-requirements.txt"
-  - "requirements-builder -e all --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt"
+  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
+  - "requirements-builder --level=pypi setup.py > .travis-release-requirements.txt"
+  - "requirements-builder --level=dev --req requirements-devel.txt setup.py > .travis-devel-requirements.txt"
+  - "mysql -e 'CREATE DATABASE IF NOT EXISTS invenio; GRANT ALL ON invenio.* TO 'root';' -uroot"
+  - "psql -c 'CREATE DATABASE invenio;' -U postgres"
 
 install:
   - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
+  - "travis_retry pip install -e .[${EXTRAS}]"
+
+before_script:
+  # Allow ES to start
+  - sleep 5
+  - curl http://127.0.0.1:9200 && echo "Elasticsearch is up!" || cat /tmp/local-es.log
 
 script:
   - "./run-tests.sh"
@@ -53,10 +79,10 @@ deploy:
   provider: pypi
   user: inveniosoftware
   password:
-    secure: TODO:PYPISECUREHASH
+    secure: "dpoGzB6JyC6Espf5+MAdBs8yRDGJnWLxi7mN8wjxCj7+rhCOHtDqBYrri++SBwvfXyLapnGJvefHnToP0QKVF4IwRgKGRToP4G39iD/DN/c8N9n5gE3SvJ6fkgWx1mL1q1VxotF6l7VTu/e2YWsCjRt40cglbvT7v1tHntGndivTnkbipHhMtIcwIIXf7IkEXq/vf2in2kY4UhWwhmpIz8J7uoWawWi3QuPh5j1Ke470defniD/MDtEswPjZ24eSVSi0dLIMowRB7x8BL1QqtfhcU3LnlKYOblFo/kWgzHOS9rc2c/rmoirBZK5qlBtFa8qxq9+remnw2+sDzZRY+l1His+ps0ppj7NJcyGOzgmDN1q7py8bYnq++KajGj7ETc4pVKUB4EkJ7m/a0cZ81cmPLQprCR0YCS1CnuFGRjk6pWjzQEyJJPqyUy9CL0cjbMYQyyZw0XGYTcmpWU+ERZ0ljTqOPPRxzZGuQp+KzxxNFVQf1+fuUiJlI8d3i3A7IYigPZf53NHgwwb1VK367Jr/RF9Rt5WnRRhWJOd84pZILlsZofPSzPV4L+/y/yPaY45xt6nqDiiBt9tPge6hGEnUQxrD4uT8T4yUQqhf1/RUdHUo1T4SHmqkmXKsc3OjvJWG2zWyEgtfAA8mNEcMwzQCvcfAJ2/VACKFjjGHx7c="
   distributions: "compile_catalog sdist bdist_wheel"
   on:
     tags: true
-    python: "2.7"
+    python: "3.5"
     repo: inveniosoftware/invenio-records-permissions
     condition: $DEPLOY = true
