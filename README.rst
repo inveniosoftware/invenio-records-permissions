@@ -30,3 +30,15 @@ TODO: Please provide feature overview of module
 
 Further documentation is available on
 https://invenio-records-permissions.readthedocs.io/
+
+
+Development
+===========
+
+    pipenv install
+    pipenv run pip install -e .[tests,elasticsearch6,sqlite]  # or others you want
+
+Tests
+-----
+
+    pipenv run ./run-tests.sh

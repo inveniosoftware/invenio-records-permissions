@@ -5,6 +5,8 @@
 # Invenio App RDM is free software; you can redistribute it and/or modify it
 # under the terms of the MIT License; see LICENSE file for more details.
 
+"""Invenio Records Permissions API."""
+
 from __future__ import absolute_import, print_function
 
 from elasticsearch_dsl.query import Q
@@ -13,10 +15,11 @@ from invenio_search.api import DefaultFilter, RecordsSearch
 
 
 def rdm_recods_filter():
-
-    perm_factory = current_app.config['RECORDS_REST_ENDPOINTS']['recid']['read_permission_factory_imp']()
-    # FIXME: this might fail if factory returns None, meaning no "query_filter" 
-    # was implemente in the generators. However, IfPublic should always be there.
+    """Records filter."""
+    perm_factory = current_app.config['RECORDS_REST_ENDPOINTS']['recid']['read_permission_factory_imp']()  # noqa
+    # FIXME: this might fail if factory returns None, meaning no "query_filter"
+    # was implemente in the generators. However, IfPublic should always be
+    # there.
 
     filters = perm_factory.query_filter
     if filters:
@@ -33,6 +36,7 @@ class RecordsSearch(RecordsSearch):
 
     class Meta:
         """Default index and filter for frontpage search."""
+
         index = 'records'
         doc_types = None
         default_filter = DefaultFilter(rdm_recods_filter)
