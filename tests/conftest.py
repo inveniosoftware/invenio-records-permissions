@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 CERN.
+# Copyright (C) 2019 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -26,7 +27,6 @@ from invenio_db import InvenioDB
 from invenio_search import InvenioSearch
 
 from invenio_records_permissions import InvenioRecordsPermissions
-from invenio_records_permissions.views import blueprint
 
 
 @pytest.fixture(scope='module')
@@ -50,6 +50,5 @@ def create_app(instance_path):
         InvenioDB(app)
         InvenioRecordsPermissions(app)
         InvenioSearch(app)
-        app.register_blueprint(blueprint)
         return app
     return factory

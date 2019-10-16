@@ -9,7 +9,7 @@
 
 """Record Permission Factories."""
 
-from ..policies import *  # get_record_permission_policy
+from ..policies import get_record_permission_policy
 
 
 def record_list_permission_factory(record=None):

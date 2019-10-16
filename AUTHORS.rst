@@ -8,6 +8,4 @@
 Authors
 =======
 
-Invenio module for role based access control to records.
-
 - CERN <info@inveniosoftware.org>

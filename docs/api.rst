@@ -11,9 +11,3 @@ API Docs
 
 .. automodule:: invenio_records_permissions.ext
    :members:
-
-Views
------
-
-.. automodule:: invenio_records_permissions.views
-   :members:

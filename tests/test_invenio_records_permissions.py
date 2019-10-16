@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 CERN.
+# Copyright (C) 2019 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -32,10 +33,3 @@ def test_init():
     assert 'invenio-records-permissions' not in app.extensions
     ext.init_app(app)
     assert 'invenio-records-permissions' in app.extensions
-
-
-def test_view(base_client):
-    """Test view."""
-    res = base_client.get("/")
-    assert res.status_code == 200
-    assert 'Welcome to Invenio-Records-Permissions' in str(res.data)

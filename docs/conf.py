@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2019 CERN.
+# Copyright (C) 2019 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -118,7 +119,7 @@ todo_include_todos = False
 html_theme = 'alabaster'
 
 html_theme_options = {
-    'description': 'Invenio module for role based access control to records.',
+    'description': 'Permission policies for Invenio records..',
     'github_user': 'inveniosoftware',
     'github_repo': 'invenio-records-permissions',
     'github_button': False,
@@ -298,7 +299,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'invenio-records-permissions', u'Invenio-Records-Permissions Documentation',
-     author, 'invenio-records-permissions', 'Invenio module for role based access control to records.',
+     author, 'invenio-records-permissions', 'Permission policies for Invenio records.',
      'Miscellaneous'),
 ]
 
@@ -318,8 +319,6 @@ texinfo_documents = [
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = {
     'python': ('https://docs.python.org/', None),
-    # TODO: Configure external documentation references, eg:
-    # 'Flask-Admin': ('https://flask-admin.readthedocs.io/en/latest/', None),
 }
 
 # Autodoc configuraton.
