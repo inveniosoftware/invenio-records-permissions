@@ -17,16 +17,15 @@
 - Use same "get_permission_policy" pattern as records.py
 """
 
-from ..generators import AnyUser, GlobalCurators, LocalCurators, RecordOwners
+from ..generators import AnyUser, RecordOwners
 from .base import BasePermissionPolicy
 
 
 class DepositPermissionPolicy(BasePermissionPolicy):
     """Access control configuration for deposits."""
 
-    can_list = [RecordOwners(), LocalCurators()]
-    # FIXME: What is the purpose of Action('deposit-create')?
+    can_list = [RecordOwners()]
     can_create = [AnyUser()]
     can_read = [RecordOwners()]
-    can_update = [GlobalCurators(), LocalCurators()]
-    can_delete = [GlobalCurators()]
+    can_update = []
+    can_delete = []

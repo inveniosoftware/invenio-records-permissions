@@ -9,11 +9,13 @@
 
 import copy
 
+import pytest
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, superuser_access
 
-from invenio_records_permissions.generators import Admin, AnyUser, \
-    AnyUserIfPublic, Disable, Generator, RecordOwners, SuperUser
+from invenio_records_permissions.generators import Admin, \
+    AllowedByAccessLevel, AnyUser, AnyUserIfPublic, Disable, Generator, \
+    RecordOwners, SuperUser
 
 
 def test_generator():
@@ -61,24 +63,9 @@ def test_admin():
     assert generator.query_filter() == []
 
 
-# TODO: Establish record schema
-record = {
-    "_access": {
-        "metadata_restricted": False,
-        "files_restricted": False
-    },
-    "access_right": "open",
-    "title": "This is a record",
-    "description": "This record is a test record",
-    "owners": [1, 2, 3],
-    "deposits": {
-        "owners": [1, 2]
-    }
-}
-
-
-def test_record_owner(mocker):
+def test_record_owner(create_record, mocker):
     generator = RecordOwners()
+    record = create_record()
 
     assert generator.needs(record=record) == [
         UserNeed(1),
@@ -100,16 +87,16 @@ def test_record_owner(mocker):
     assert generator.query_filter().to_dict() == {'term': {'owners': 1}}
 
 
-private_record = copy.deepcopy(record)
-private_record["_access"] = {
-    "metadata_restricted": True,
-    "files_restricted": True
-}
-private_record["access_right"] = "restricted"
-
-
-def test_any_user_if_public():
+def test_any_user_if_public(create_record):
     generator = AnyUserIfPublic()
+    record = create_record()
+    private_record = create_record({
+        "_access": {
+            "metadata_restricted": True,
+            "files_restricted": True
+        },
+        "access_right": "restricted"
+    })
 
     assert generator.needs(record=record) == [any_user]
     assert generator.needs(record=private_record) == []
@@ -118,5 +105,57 @@ def test_any_user_if_public():
     assert generator.excludes(record=private_record) == []
 
     assert generator.query_filter().to_dict() == {
-        'term': {'_access.metadata_restricted': False}
+        'term': {"_access.metadata_restricted": False}
     }
+
+
+@pytest.mark.parametrize("action", ['read', 'update', 'delete'])
+def test_allowedbyaccesslevels_metadata_curator(action, create_record):
+    # Restricted record, only viewable by owner and a Metadata Curator
+    record = create_record(
+        {
+            "owners": [4],
+            "_access": {
+                "metadata_restricted": True,
+                "files_restricted": True
+            },
+            "internal": {
+                "access_levels": {
+                    "metadata_curator": [{"scheme": "person", "id": 1}]
+                }
+            }
+        }
+    )
+    generator = AllowedByAccessLevel(action=action)
+
+    if action in ['read', 'update']:
+        assert generator.needs(record=record) == [UserNeed(1)]
+    else:
+        assert generator.needs(record=record) == []
+
+    assert generator.excludes(record=record) == []
+
+
+def test_allowedbyaccesslevels_query_filter(mocker):
+    # TODO: Test query_filter on actual Elasticsearch instance per #23
+
+    # User that has been allowed
+    generator = AllowedByAccessLevel()
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+
+    # TODO: Update to account for other 'read' access levels
+    assert generator.query_filter().to_dict() == {
+        'term': {
+            'internal.access_levels.metadata_curator': {
+                'scheme': 'person', 'id': 1
+            }
+        }
+    }
+
+    # User that doesn't provide 'id'
+    generator = AllowedByAccessLevel()
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='foo', value=1)]
+
+    assert generator.query_filter() == []

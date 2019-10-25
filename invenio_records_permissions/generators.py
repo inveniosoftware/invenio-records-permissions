@@ -10,6 +10,9 @@
 """Invenio Records Permissions Generators."""
 
 import json
+import operator
+from functools import reduce
+from itertools import chain
 
 from elasticsearch_dsl.query import Q
 from flask import g
@@ -145,19 +148,73 @@ class AnyUserIfPublic(Generator):
         return Q('term', **{"_access.metadata_restricted": False})
 
 
-class GlobalCurators(Generator):
-    """Allows Global Curators."""
+class AllowedByAccessLevel(Generator):
+    """Allows users/roles/groups that have an appropriate access level."""
 
-    # TODO: Implement me after deposits have been discussed
-    pass
+    # TODO: Implement other access levels:
+    # 'metadata_reader'
+    # 'files_reader'
+    # 'files_curator'
+    # 'admin'
+    ACTION_TO_ACCESS_LEVELS = {
+        'create': [],
+        'read': ['metadata_curator'],
+        'update': ['metadata_curator'],
+        'delete': []
+    }
 
+    def __init__(self, action='read'):
+        """Constructor."""
+        self.action = action
 
-class LocalCurators(Generator):
-    """Allows Local Curators."""
+    def needs(self, record=None, **kwargs):
+        """Enabling UserNeeds for each person."""
+        if not record:
+            return []
 
-    # TODO: Implement me after deposits have been discussed
-    pass
+        access_levels = AllowedByAccessLevel.ACTION_TO_ACCESS_LEVELS.get(
+            self.action, [])
 
+        # Name "identity" is used bc it correlates with flask-principal
+        # identity while not being one.
+        allowed_identities = chain.from_iterable([
+            record.get('internal', {})
+                  .get('access_levels', {})
+                  .get(access_level, [])
+            for access_level in access_levels
+        ])
+
+        return [
+            UserNeed(identity.get('id')) for identity in allowed_identities
+            if identity.get('scheme') == 'person' and identity.get('id')
+            # TODO: Implement other schemes
+        ]
+
+    def query_filter(self, *args, **kwargs):
+        """Search filter for the current user with this generator."""
+        id_need = next(
+            (need for need in g.identity.provides if need.method == 'id'),
+            None
+        )
+
+        if not id_need:
+            return []
+
+        # To get the record in the search results, the access level must
+        # have been put in the 'read' array
+        read_levels = AllowedByAccessLevel.ACTION_TO_ACCESS_LEVELS.get(
+            'read', [])
+
+        queries = [
+            Q('term', **{
+                "internal.access_levels.{}".format(access_level): {
+                    "scheme": "person", "id": id_need.value
+                    # TODO: Implement other schemes
+                }
+            }) for access_level in read_levels
+        ]
+
+        return reduce(operator.or_, queries)
 
 #
 # | Meta Restricted | Files Restricted | Access Right | Result |

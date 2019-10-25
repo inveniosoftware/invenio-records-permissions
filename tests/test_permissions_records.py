@@ -7,6 +7,7 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
+import pytest
 from elasticsearch_dsl import Q
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, superuser_access
@@ -18,20 +19,16 @@ from invenio_records_permissions import record_create_permission_factory, \
     record_delete_permission_factory, record_list_permission_factory, \
     record_read_permission_factory, record_update_permission_factory
 
-# TODO: Establish record schema
-record = {
-    "_access": {
-        "metadata_restricted": True,
-        "files_restricted": True
-    },
-    "access_right": "restricted",
-    "title": "This is a record",
-    "description": "This record is a test record",
-    "owners": [1, 2, 3],
-    "deposits": {
-        "owners": [1, 2]
-    }
-}
+
+@pytest.fixture(scope="module")
+def record(create_record):
+    return create_record({
+        "_access": {
+            "metadata_restricted": True,
+            "files_restricted": True
+        },
+        "access_right": "restricted"
+    })
 
 
 def test_record_list_permission_factory(app, superuser_role_need):
@@ -43,7 +40,7 @@ def test_record_list_permission_factory(app, superuser_role_need):
     assert list_perm.query_filters == [Q('match_all')]
 
 
-def test_record_create_permission_factory(app, superuser_role_need):
+def test_record_create_permission_factory(app, record, superuser_role_need):
     create_perm = record_create_permission_factory(record)
 
     assert create_perm.needs == {superuser_role_need}
@@ -51,12 +48,12 @@ def test_record_create_permission_factory(app, superuser_role_need):
     assert create_perm.query_filters == [~Q('match_all')]
 
 
-def test_record_read_permission_factory(app, mocker, superuser_role_need):
+def test_record_read_permission_factory(
+        app, mocker, record, superuser_role_need):
     # Assumes identity + provides are well initialized for user
     # TODO: Integration test for g.identity.provides
     patched_g = mocker.patch('invenio_records_permissions.generators.g')
     patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
-
     read_perm = record_read_permission_factory(record)
 
     assert read_perm.needs == {
@@ -72,10 +69,9 @@ def test_record_read_permission_factory(app, mocker, superuser_role_need):
     ]
 
 
-def test_update_permission_factory(app, mocker, superuser_role_need):
+def test_update_permission_factory(app, mocker, record, superuser_role_need):
     patched_g = mocker.patch('invenio_records_permissions.generators.g')
     patched_g.identity.provides = [mocker.Mock(method='id', value=4)]
-
     permission = record_update_permission_factory(record)
 
     assert permission.needs == {
@@ -85,12 +81,11 @@ def test_update_permission_factory(app, mocker, superuser_role_need):
         UserNeed(3)
     }
     assert permission.excludes == set()
-    assert permission.query_filters == [
-        Q('term', owners=4)
-    ]
 
 
-def test_delete_permission_factory(app):
+def test_delete_permission_factory(app, mocker, record):
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=4)]
     permission = record_delete_permission_factory(record)
 
     assert permission.needs == {
@@ -98,4 +93,3 @@ def test_delete_permission_factory(app):
         ActionNeed('admin-access')
     }
     assert permission.excludes == set()
-    assert permission.query_filters == []

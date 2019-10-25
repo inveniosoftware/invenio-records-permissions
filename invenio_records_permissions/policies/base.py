@@ -108,7 +108,11 @@ class BasePermissionPolicy(Permission):
 
     @property
     def query_filters(self):
-        """List of ElasticSearch query filters."""
+        """List of ElasticSearch query filters.
+
+        These filters consist of additive queries mapping to what the current
+        user should be able to retrieve via search.
+        """
         filters = [
             generator.query_filter(**self.over)
             for generator in self.generators
