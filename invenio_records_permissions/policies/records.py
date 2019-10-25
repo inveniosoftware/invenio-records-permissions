@@ -64,11 +64,11 @@ class RecordPermissionPolicy(BasePermissionPolicy):
 def get_record_permission_policy():
     """Return RecordPermissionPolicy.
 
-    Relies on ``RECORDS_PERMISSIONS_RECORD_PERMISSION_FACTORY`` to
+    Relies on ``RECORDS_PERMISSIONS_RECORD_POLICY`` to
     automatically configure functionality. This way the hoster doesn't need to
     define their own CRUD factories (functions) anymore.
     """
     return obj_or_import_string(
-        current_app.config.get('RECORDS_PERMISSIONS_RECORD_FACTORY'),
+        current_app.config.get('RECORDS_PERMISSIONS_RECORD_POLICY'),
         default=RecordPermissionPolicy
     )

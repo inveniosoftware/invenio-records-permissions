@@ -9,7 +9,7 @@
 
 """Permission policies for Invenio records."""
 
-RECORDS_PERMISSIONS_RECORD_FACTORY = (
+RECORDS_PERMISSIONS_RECORD_POLICY = (
     'invenio_records_permissions.policies.RecordPermissionPolicy'
 )
 """PermissionPolicy used by provided permission factories."""
