@@ -52,3 +52,37 @@ def create_app(instance_path):
         InvenioSearch(app)
         return app
     return factory
+
+
+@pytest.fixture(scope="session")
+def create_record():
+    """Factory pattern for a loaded Record.
+
+    The returned dict record has the interface of a Record.
+
+    It provides a default value for each required field.
+    """
+    def _create_record(metadata=None):
+        # TODO: Modify according to record schema
+        metadata = metadata or {}
+        record = {
+            "_access": {
+                # TODO: Remove if "access_right" includes it
+                "metadata_restricted": False,
+                "files_restricted": False
+            },
+            "access_right": "open",
+            "title": "This is a record",
+            "description": "This record is a test record",
+            "owners": [1, 2, 3],
+            "deposits": {
+                "owners": [1, 2]
+            },
+            "sys": {
+                "permissions": {},
+            }
+        }
+        record.update(metadata)
+        return record
+
+    return _create_record

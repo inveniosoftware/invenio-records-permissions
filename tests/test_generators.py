@@ -9,11 +9,12 @@
 
 import copy
 
+import pytest
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user
 
-from invenio_records_permissions.generators import Admin, AnyUser, \
-    AnyUserIfPublic, Deny, Generator, RecordOwners
+from invenio_records_permissions.generators import Admin, AllowedIdentities, \
+    AnyUser, AnyUserIfPublic, Deny, Generator, RecordOwners
 
 
 def test_generator():
@@ -53,24 +54,9 @@ def test_admin():
     assert generator.query_filter() == []
 
 
-# TODO: Establish record schema
-record = {
-    "_access": {
-        "metadata_restricted": False,
-        "files_restricted": False
-    },
-    "access_right": "open",
-    "title": "This is a record",
-    "description": "This record is a test record",
-    "owners": [1, 2, 3],
-    "deposits": {
-        "owners": [1, 2]
-    }
-}
-
-
-def test_record_owner(mocker):
+def test_record_owner(create_record, mocker):
     generator = RecordOwners()
+    record = create_record()
 
     assert generator.needs(record=record) == [
         UserNeed(1),
@@ -92,16 +78,16 @@ def test_record_owner(mocker):
     assert generator.query_filter().to_dict() == {'term': {'owners': 1}}
 
 
-private_record = copy.deepcopy(record)
-private_record["_access"] = {
-    "metadata_restricted": True,
-    "files_restricted": True
-}
-private_record["access_right"] = "restricted"
-
-
-def test_any_user_if_public():
+def test_any_user_if_public(create_record):
     generator = AnyUserIfPublic()
+    record = create_record()
+    private_record = create_record({
+        "_access": {
+            "metadata_restricted": True,
+            "files_restricted": True
+        },
+        "access_right": "restricted"
+    })
 
     assert generator.needs(record=record) == [any_user]
     assert generator.needs(record=private_record) == []
@@ -110,5 +96,93 @@ def test_any_user_if_public():
     assert generator.excludes(record=private_record) == []
 
     assert generator.query_filter().to_dict() == {
-        'term': {'_access.metadata_restricted': False}
+        'term': {'access_right': "open"}
+    }
+
+
+@pytest.fixture()
+def permissions_record(create_record):
+    return create_record(
+        {
+            "sys": {
+                "permissions": {
+                    "can_read": [{"type": "person", "id": 1}],
+                    "can_update": [
+                        {"type": "person", "id": 2},
+                        {"type": "org", "id": 1}
+                    ],
+                    "can_foo": []
+                }
+            }
+        })
+
+
+def test_allowed_identities_read(permissions_record, mocker):
+    generator = AllowedIdentities('read')
+    record = permissions_record
+    # Anonymous identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = []
+
+    assert generator.needs(record=record) == [UserNeed(1)]
+    assert generator.excludes(record=record) == []
+    assert not generator.query_filter()
+
+    # Authenticated identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+
+    assert generator.query_filter().to_dict() == {
+        'term': {
+            'sys.permissions.can_read': {'type': 'person', 'id': 1}
+        }
+    }
+
+
+def test_allowed_identities_update(permissions_record, mocker):
+    generator = AllowedIdentities('update')
+    record = permissions_record
+    # Authenticated identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+
+    assert generator.needs(record=record) == [UserNeed(2)]
+    assert generator.excludes(record=record) == []
+    assert generator.query_filter().to_dict() == {
+        'term': {
+            'sys.permissions.can_update': {'type': 'person', 'id': 1}
+        }
+    }
+
+
+def test_allowed_identities_missing_action(permissions_record, mocker):
+    generator = AllowedIdentities('delete')
+    record = permissions_record
+    # Authenticated identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+
+    assert generator.needs(record=record) == []
+    assert generator.excludes(record=record) == []
+    assert generator.query_filter().to_dict() == {
+        'term': {
+            'sys.permissions.can_delete': {'type': 'person', 'id': 1}
+        }
+    }
+
+
+def test_allowed_identities_custom_action(permissions_record, mocker):
+    # test foo (i.e. custom action + empty array)
+    generator = AllowedIdentities('foo')
+    record = permissions_record
+    # Authenticated identity
+    patched_g = mocker.patch('invenio_records_permissions.generators.g')
+    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+
+    assert generator.needs(record=record) == []
+    assert generator.excludes(record=record) == []
+    assert generator.query_filter().to_dict() == {
+        'term': {
+            'sys.permissions.can_foo': {'type': 'person', 'id': 1}
+        }
     }

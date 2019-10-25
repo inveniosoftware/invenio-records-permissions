@@ -103,26 +103,58 @@ class RecordOwners(Generator):
 
 
 class AnyUserIfPublic(Generator):
-    """Allows any user if record is public.
+    """Allows any user if record is open access.
 
     TODO: Revisit when dealing with files.
     """
 
     def needs(self, record=None, **rest_over):
         """Enabling Needs."""
-        is_restricted = (
-            record and
-            record.get('_access', {}).get('metadata_restricted', False)
+        is_open = (
+            record and record.get('access_right') == "open"
         )
-        return [any_user] if not is_restricted else []
-
-    def excludes(self, record=None, **rest_over):
-        """Preventing Needs."""
-        return []
+        return [any_user] if is_open else []
 
     def query_filter(self, *args, **kwargs):
         """Filters for non-restricted records."""
-        return Q('term', **{"_access.metadata_restricted": False})
+        return Q('term', **{"access_right": "open"})
+
+
+class AllowedIdentities(Generator):
+    """Allows additional explicit users/roles/groups...
+
+    Name "identity" is used bc it correlates with flask-principal identity
+    while not being one.
+    """
+
+    def __init__(self, action='read'):
+        """Constructor."""
+        self.action = action
+        self.can = 'can_' + str(self.action)
+
+    def needs(self, record=None, **kwargs):
+        """Enabling UserNeeds for each person.
+
+        TODO: Organization and role needs
+        """
+        if not record:
+            return []
+
+        return [
+            UserNeed(identity.get('id')) for identity in
+            record.get('sys', {}).get('permissions', {}).get(self.can, [])
+            if identity.get('type') == 'person' and identity.get('id')
+        ]
+
+    def query_filter(self, *args, **kwargs):
+        """Filters for non-restricted records."""
+        for need in g.identity.provides:
+            if need.method == 'id':
+                return Q('term', **{
+                    "sys.permissions." + self.can: {
+                        "type": "person", "id": need.value
+                    }
+                })
 
 
 class GlobalCurators(Generator):

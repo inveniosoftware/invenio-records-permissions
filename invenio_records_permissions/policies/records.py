@@ -14,7 +14,8 @@ from flask import current_app
 from werkzeug.utils import import_string
 
 from ..errors import UnknownGeneratorError
-from ..generators import Admin, AnyUser, AnyUserIfPublic, Deny, RecordOwners
+from ..generators import Admin, AllowedIdentities, AnyUser, AnyUserIfPublic, \
+    Deny, RecordOwners
 from .base import BasePermissionPolicy
 
 
@@ -52,13 +53,16 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     can_list = [AnyUser()]
     # Create action given to no one. Not even superusers.
     can_create = [Deny()]
-    # Read access given to everyone if public record/files and owners always.
-    can_read = [AnyUserIfPublic(), RecordOwners()]
+    # Read access given according to access rights, owners and any *additional*
+    # explicit read permissions.
+    can_read = [AnyUserIfPublic(), RecordOwners(), AllowedIdentities('read')]
     # can_read_files = [AnyUserIfPublicFiles(), RecordOwners()]
-    # Update access given to record owners.
-    can_update = [RecordOwners()]
-    # Delete access given to admins only.
-    can_delete = [Admin()]
+    # Update access given to record owners and any *additional* explicitly
+    # allowed entities.
+    can_update = [RecordOwners(), AllowedIdentities('update')]
+    # Delete access given to admins and any *additional* explicitly
+    # allowed entities only.
+    can_delete = [Admin(), AllowedIdentities('delete')]
 
 
 def get_record_permission_policy():
