@@ -80,10 +80,8 @@ class BasePermissionPolicy(Permission):
         needs = [
             generator.needs(**self.over) for generator in self.generators
         ]
-        needs = set(chain.from_iterable(needs))
-
-        self.explicit_needs |= needs
-        self._load_permissions()  # explicit_needs is used here
+        self.explicit_needs |= set(chain.from_iterable(needs))
+        self._load_permissions()  # self.explicit_needs is used here
         return self._permissions.needs
 
     @property
@@ -97,9 +95,8 @@ class BasePermissionPolicy(Permission):
         excludes = [
             generator.excludes(**self.over) for generator in self.generators
         ]
-        excludes = set(chain.from_iterable(excludes))
-        # self.explicit_excludes |= excludes  # See invenio_access issue
-        self._load_permissions()
+        self.explicit_excludes |= set(chain.from_iterable(excludes))
+        self._load_permissions()  # self.explicit_excludes is used here
         return self._permissions.excludes
 
     @property

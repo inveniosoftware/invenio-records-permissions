@@ -34,27 +34,24 @@ record = {
 }
 
 
-def test_record_list_permission_factory(app):
+def test_record_list_permission_factory(app, superuser_role_need):
     list_perm = record_list_permission_factory()
 
     # Loading permissions in invenio-access always add superuser
-    assert list_perm.needs == {superuser_access, any_user}
+    assert list_perm.needs == {superuser_role_need, any_user}
     assert list_perm.excludes == set()
     assert list_perm.query_filters == [Q('match_all')]
 
 
-def test_record_create_permission_factory(app):
+def test_record_create_permission_factory(app, superuser_role_need):
     create_perm = record_create_permission_factory(record)
 
-    assert create_perm.needs == {superuser_access}
-    # Fails because of bug in invenio-access:
-    # https://github.com/inveniosoftware/invenio-access/issues/165
-    # TODO: Fix bug, then uncomment this assertion
-    # assert create_perm.excludes == {any_user}
+    assert create_perm.needs == {superuser_role_need}
+    assert create_perm.excludes == {any_user}
     assert create_perm.query_filters == [~Q('match_all')]
 
 
-def test_record_read_permission_factory(app, mocker):
+def test_record_read_permission_factory(app, mocker, superuser_role_need):
     # Assumes identity + provides are well initialized for user
     # TODO: Integration test for g.identity.provides
     patched_g = mocker.patch('invenio_records_permissions.generators.g')
@@ -63,7 +60,7 @@ def test_record_read_permission_factory(app, mocker):
     read_perm = record_read_permission_factory(record)
 
     assert read_perm.needs == {
-        superuser_access,
+        superuser_role_need,
         UserNeed(1),
         UserNeed(2),
         UserNeed(3)
@@ -75,14 +72,14 @@ def test_record_read_permission_factory(app, mocker):
     ]
 
 
-def test_update_permission_factory(app, mocker):
+def test_update_permission_factory(app, mocker, superuser_role_need):
     patched_g = mocker.patch('invenio_records_permissions.generators.g')
     patched_g.identity.provides = [mocker.Mock(method='id', value=4)]
 
     permission = record_update_permission_factory(record)
 
     assert permission.needs == {
-        superuser_access,
+        superuser_role_need,
         UserNeed(1),
         UserNeed(2),
         UserNeed(3)

@@ -8,7 +8,7 @@
 # more details.
 
 from elasticsearch_dsl import Q
-from invenio_access.permissions import any_user, superuser_access
+from invenio_access.permissions import any_user
 
 from invenio_records_permissions.generators import AnyUser, Deny
 from invenio_records_permissions.policies import BasePermissionPolicy
@@ -42,7 +42,7 @@ def test_custom_permission_policy(app):
     assert len(policy(action='random').generators) == 0
 
 
-def test_base_permission():
+def test_base_permission(superuser_role_need):
     create_perm = TestPermissionPolicy(action='create')
     list_perm = TestPermissionPolicy(action='list')
     read_perm = TestPermissionPolicy(action='read')
@@ -50,25 +50,23 @@ def test_base_permission():
     delete_perm = TestPermissionPolicy(action='delete')
     foo_bar_perm = TestPermissionPolicy(action='foo_bar')
 
-    assert create_perm.needs == {superuser_access, any_user}
+    assert create_perm.needs == {superuser_role_need, any_user}
     assert create_perm.excludes == set()
 
-    assert list_perm.needs == {superuser_access, any_user}
+    assert list_perm.needs == {superuser_role_need, any_user}
     assert list_perm.excludes == set()
 
-    assert read_perm.needs == {superuser_access, any_user}
+    assert read_perm.needs == {superuser_role_need, any_user}
     assert read_perm.excludes == set()
     assert read_perm.query_filters == [Q('match_all')]
 
-    assert update_perm.needs == {superuser_access}
-    # FIXME: will fail because invenio-access adds all in 'needs'
-    # https://github.com/inveniosoftware/invenio-access/issues/165
-    # assert update_perm.excludes == {any_user}
+    assert update_perm.needs == {superuser_role_need}
+    # TODO: Reinstate {any_user} when default Deny() implemented. See #10
+    assert update_perm.excludes == set()
 
-    assert delete_perm.needs == {superuser_access}
-    # FIXME: will fail because invenio-access adds all in 'needs'
-    # https://github.com/inveniosoftware/invenio-access/issues/165
-    # assert delete_perm.excludes == {any_user}
+    assert delete_perm.needs == {superuser_role_need}
+    # TODO: Reinstate {any_user} when default Deny() implemented. See #10
+    assert delete_perm.excludes == set()
 
-    assert foo_bar_perm.needs == {superuser_access, any_user}
+    assert foo_bar_perm.needs == {superuser_role_need, any_user}
     assert foo_bar_perm.excludes == set()
