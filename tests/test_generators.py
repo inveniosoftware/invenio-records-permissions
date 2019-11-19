@@ -10,10 +10,10 @@
 import copy
 
 from flask_principal import ActionNeed, UserNeed
-from invenio_access.permissions import any_user
+from invenio_access.permissions import any_user, superuser_access
 
 from invenio_records_permissions.generators import Admin, AnyUser, \
-    AnyUserIfPublic, Deny, Generator, RecordOwners
+    AnyUserIfPublic, Disable, Generator, RecordOwners, SuperUser
 
 
 def test_generator():
@@ -32,8 +32,16 @@ def test_any_user():
     assert generator.query_filter().to_dict() == {'match_all': {}}
 
 
-def test_deny():
-    generator = Deny()
+def test_superuser():
+    generator = SuperUser()
+
+    assert generator.needs() == [superuser_access]
+    assert generator.excludes() == []
+    # TODO: Test query_filter when new permissions metadata implemented
+
+
+def test_disable():
+    generator = Disable()
 
     assert generator.needs() == []
     assert generator.excludes() == [any_user]

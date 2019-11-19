@@ -37,7 +37,7 @@ record = {
 def test_record_list_permission_factory(app, superuser_role_need):
     list_perm = record_list_permission_factory()
 
-    # Loading permissions in invenio-access always add superuser
+    # Loading permissions in invenio-access always adds superuser
     assert list_perm.needs == {superuser_role_need, any_user}
     assert list_perm.excludes == set()
     assert list_perm.query_filters == [Q('match_all')]

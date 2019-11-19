@@ -14,7 +14,7 @@ from itertools import chain
 from flask import current_app
 from invenio_access import Permission
 
-from ..generators import Deny
+from ..generators import Disable
 
 # Where can a property be used?
 #
@@ -42,6 +42,14 @@ class BasePermissionPolicy(Permission):
     The class defines the overall policy and the instance encapsulates the
     permissions for an *action* *over* a set of objects.
 
+    NOTE: :method:`invenio_access.permissions.Permission._load_permissions()`
+          used in :method:`needs` adds the superuser_access (if tied to a User
+          or Role) for us.
+
+    If `can_<self.action>`
+        is not defined, no one is allowed (Disable()).
+        is an empty list, only Super Users are allowed (via NOTE above).
+
     TODO: Recognize a PermissionPolicy class in other modules instead of
           individual factory functions to lessen the configuration burden.
     """
@@ -60,22 +68,21 @@ class BasePermissionPolicy(Permission):
 
     @property
     def generators(self):
-        """List of Needs generators for self.action."""
-        action = self.action
-        cls = self.__class__
-        if hasattr(cls, 'can_' + action):
-            return getattr(cls, 'can_' + action)
+        """List of Needs generators for self.action.
 
-        current_app.logger.error("Unknown action {action}.".format(
-            action=action))
-
-        return []
+        Defaults to Disable() if no can_<self.action> defined.
+        """
+        return getattr(self.__class__, 'can_' + self.action, [Disable()])
 
     @property
     def needs(self):
         """Set of generated Needs.
 
         If ANY of the Needs are matched, permission is allowed.
+
+        Note that this will expand ActionNeeds into the Users/Roles that
+        provide them via
+        :method:`invenio_access.permissions.Permission._load_permissions()`
         """
         needs = [
             generator.needs(**self.over) for generator in self.generators
@@ -90,7 +97,7 @@ class BasePermissionPolicy(Permission):
 
         NOTE: `excludes` take precedence over `needs` i.e., if the same Need
         is in the `needs` list and the `excludes` list, then that Need is
-        excluded (must not be provided by identity).
+        excluded.
         """
         excludes = [
             generator.excludes(**self.over) for generator in self.generators

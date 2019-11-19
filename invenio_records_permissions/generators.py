@@ -14,7 +14,7 @@ import json
 from elasticsearch_dsl.query import Q
 from flask import g
 from flask_principal import ActionNeed, UserNeed
-from invenio_access.permissions import any_user
+from invenio_access.permissions import any_user, superuser_access
 from invenio_files_rest.models import Bucket, ObjectVersion
 from invenio_records_files.api import Record
 from invenio_records_files.models import RecordsBuckets
@@ -55,15 +55,33 @@ class AnyUser(Generator):
 
     def query_filter(self, **kwargs):
         """Match all in search."""
+        # TODO: Implement with new permissions metadata
         return Q('match_all')
 
 
-class Deny(Generator):
-    """Denies ALL users (except super users)."""
+class SuperUser(Generator):
+    """Allows super users."""
 
     def __init__(self):
         """Constructor."""
-        super(Deny, self).__init__()
+        super(SuperUser, self).__init__()
+
+    def needs(self, **kwargs):
+        """Enabling Needs."""
+        return [superuser_access]
+
+    def query_filter(self, record=None, **kwargs):
+        """Filters for current identity as super user."""
+        # TODO: Implement with new permissions metadata
+        return []
+
+
+class Disable(Generator):
+    """Denies ALL users including super users."""
+
+    def __init__(self):
+        """Constructor."""
+        super(Disable, self).__init__()
 
     def excludes(self, **kwargs):
         """Preventing Needs."""
@@ -95,6 +113,7 @@ class RecordOwners(Generator):
 
     def query_filter(self, record=None, **kwargs):
         """Filters for current identity as owner."""
+        # TODO: Implement with new permissions metadata
         provides = g.identity.provides
         for need in provides:
             if need.method == 'id':
@@ -122,6 +141,7 @@ class AnyUserIfPublic(Generator):
 
     def query_filter(self, *args, **kwargs):
         """Filters for non-restricted records."""
+        # TODO: Implement with new permissions metadata
         return Q('term', **{"_access.metadata_restricted": False})
 
 

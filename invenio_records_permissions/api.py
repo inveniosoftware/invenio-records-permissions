@@ -15,14 +15,15 @@ from flask import current_app
 from invenio_search.api import DefaultFilter, RecordsSearch
 
 
-def rdm_recods_filter():
+def rdm_records_filter():
     """Records filter."""
+    # TODO: Implement with new permissions metadata
     perm_factory = current_app.config['RECORDS_REST_ENDPOINTS']['recid']['read_permission_factory_imp']()  # noqa
     # FIXME: this might fail if factory returns None, meaning no "query_filter"
     # was implemente in the generators. However, IfPublic should always be
     # there.
 
-    filters = perm_factory.query_filter
+    filters = perm_factory.query_filters
     if filters:
         qf = None
         for f in filters:
@@ -40,4 +41,4 @@ class RecordsSearch(RecordsSearch):
 
         index = 'records'
         doc_types = None
-        default_filter = DefaultFilter(rdm_recods_filter)
+        default_filter = DefaultFilter(rdm_records_filter)

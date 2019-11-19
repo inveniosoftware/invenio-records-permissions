@@ -14,7 +14,7 @@ from flask import current_app
 from werkzeug.utils import import_string
 
 from ..errors import UnknownGeneratorError
-from ..generators import Admin, AnyUser, AnyUserIfPublic, Deny, RecordOwners
+from ..generators import Admin, AnyUser, AnyUserIfPublic, Disable, RecordOwners
 from .base import BasePermissionPolicy
 
 
@@ -50,8 +50,9 @@ class RecordPermissionPolicy(BasePermissionPolicy):
 
     # Read access given to everyone.
     can_list = [AnyUser()]
-    # Create action given to no one. Not even superusers.
-    can_create = [Deny()]
+    # Create action given to no one (Not even superusers) bc Deposits should
+    # be used.
+    can_create = [Disable()]
     # Read access given to everyone if public record/files and owners always.
     can_read = [AnyUserIfPublic(), RecordOwners()]
     # can_read_files = [AnyUserIfPublicFiles(), RecordOwners()]

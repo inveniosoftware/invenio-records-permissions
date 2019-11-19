@@ -10,8 +10,18 @@
 from elasticsearch_dsl import Q
 from invenio_access.permissions import any_user
 
-from invenio_records_permissions.generators import AnyUser, Deny
+from invenio_records_permissions.generators import AnyUser, Disable
 from invenio_records_permissions.policies import BasePermissionPolicy
+
+
+def test_base_permission_policy_generators(app):
+    policy = BasePermissionPolicy
+
+    for action in ['list', 'read', 'update', 'delete']:
+        generators = policy(action=action).generators
+        assert len(generators) == 0
+
+    assert isinstance(policy(action='random').generators[0], Disable)
 
 
 class TestPermissionPolicy(BasePermissionPolicy):
@@ -21,16 +31,7 @@ class TestPermissionPolicy(BasePermissionPolicy):
     can_foo_bar = [AnyUser()]
 
 
-def test_base_permission_policy(app):
-    policy = BasePermissionPolicy
-
-    for action in ['list', 'read', 'update', 'delete', 'random']:
-        generators = policy(action=action).generators
-
-        assert len(generators) == 0
-
-
-def test_custom_permission_policy(app):
+def test_permission_policy_generators(app):
     policy = TestPermissionPolicy
 
     assert isinstance(policy(action='create').generators[0], AnyUser)
@@ -39,10 +40,10 @@ def test_custom_permission_policy(app):
     assert isinstance(policy(action='foo_bar').generators[0], AnyUser)
     assert len(policy(action='update').generators) == 0
     assert len(policy(action='delete').generators) == 0
-    assert len(policy(action='random').generators) == 0
+    assert isinstance(policy(action='random').generators[0], Disable)
 
 
-def test_base_permission(superuser_role_need):
+def test_permission_policy_needs_excludes(superuser_role_need):
     create_perm = TestPermissionPolicy(action='create')
     list_perm = TestPermissionPolicy(action='list')
     read_perm = TestPermissionPolicy(action='read')
@@ -58,14 +59,11 @@ def test_base_permission(superuser_role_need):
 
     assert read_perm.needs == {superuser_role_need, any_user}
     assert read_perm.excludes == set()
-    assert read_perm.query_filters == [Q('match_all')]
 
     assert update_perm.needs == {superuser_role_need}
-    # TODO: Reinstate {any_user} when default Deny() implemented. See #10
     assert update_perm.excludes == set()
 
     assert delete_perm.needs == {superuser_role_need}
-    # TODO: Reinstate {any_user} when default Deny() implemented. See #10
     assert delete_perm.excludes == set()
 
     assert foo_bar_perm.needs == {superuser_role_need, any_user}
