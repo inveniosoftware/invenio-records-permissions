@@ -31,7 +31,9 @@ tests_require = [
     sphinx_require,
 ]
 
-invenio_search_version = '1.2.0'
+# Should follow inveniosoftware/invenio versions
+invenio_db_version = '>=1.0.4,<1.1.0'
+invenio_search_version = '>=1.2.0,<1.3.0'
 
 extras_require = {
     'elasticsearch6': [
@@ -41,13 +43,13 @@ extras_require = {
         'invenio-search[elasticsearch7]>={}'.format(invenio_search_version),
     ],
     'mysql': [
-        'invenio-db[mysql,versioning]>=1.0.0',
+        'invenio-db[mysql,versioning]{}'.format(invenio_db_version),
     ],
     'postgresql': [
-        'invenio-db[postgresql,versioning]>=1.0.0',
+        'invenio-db[postgresql,versioning]{}'.format(invenio_db_version),
     ],
     'sqlite': [
-        'invenio-db[versioning]>=1.0.0',
+        'invenio-db[versioning]{}'.format(invenio_db_version),
     ],
     'docs': [
         sphinx_require,
@@ -75,7 +77,7 @@ install_requires = [
     # backward change we also place an upper limit
     # https://invenio.readthedocs.io/en/latest/releases/maintenance-policy.html
     'invenio-access>=1.3.0,<1.4.0',
-    'invenio-records-files==1.1.1'
+    'invenio-records-files>=1.2.0,<1.3.0'
 ]
 
 packages = find_packages()
