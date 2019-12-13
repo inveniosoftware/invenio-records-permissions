@@ -15,21 +15,12 @@ fixtures are available.
 
 from __future__ import absolute_import, print_function
 
-import shutil
-import tempfile
-
 import pytest
-from flask import Flask
-from flask_babelex import Babel
-from invenio_access import InvenioAccess
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import superuser_access
-from invenio_accounts import InvenioAccounts
 from invenio_accounts.models import Role
-from invenio_db import InvenioDB
-from invenio_search import InvenioSearch
-
-from invenio_records_permissions import InvenioRecordsPermissions
+from invenio_app.factory import create_app as _create_app
+from invenio_records_files.api import Record
 
 
 @pytest.fixture(scope='module')
@@ -42,19 +33,9 @@ def celery_config():
 
 
 @pytest.fixture(scope='module')
-def create_app(instance_path):
+def create_app():
     """Application factory fixture."""
-    def factory(**config):
-        app = Flask('testapp', instance_path=instance_path)
-        app.config.update(**config)
-        Babel(app)
-        InvenioAccess(app)
-        InvenioAccounts(app)
-        InvenioDB(app)
-        InvenioRecordsPermissions(app)
-        InvenioSearch(app)
-        return app
-    return factory
+    return _create_app
 
 
 @pytest.fixture(scope="function")
@@ -98,9 +79,6 @@ def create_record():
             "title": "This is a record",
             "description": "This record is a test record",
             "owners": [1, 2, 3],
-            "deposits": {
-                "owners": [1, 2]
-            },
             "internal": {
                 "access_levels": {},
             }
@@ -109,3 +87,22 @@ def create_record():
         return record
 
     return _create_record
+
+
+@pytest.fixture(scope="function")
+def create_real_record(create_record, location):
+    """Factory pattern to create a real Record.
+
+    This is needed for tests relying on database and ES operations.
+    """
+    def _create_real_record(metadata=None):
+        record_dict = create_record(metadata)
+
+        record = Record.create(record_dict)
+
+        return record
+        # Flush to index and database
+        # current_search.flush_and_refresh(index='*')
+        # db.session.commit()
+
+    return _create_real_record

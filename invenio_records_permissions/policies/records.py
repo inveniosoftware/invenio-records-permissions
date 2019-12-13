@@ -10,6 +10,7 @@
 """Access controls for records."""
 
 import six
+from bidict import bidict
 from flask import current_app
 from werkzeug.utils import import_string
 
@@ -48,6 +49,11 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     always adds the ``superuser-access``, so admins will always be allowed.
     """
 
+    NEED_LABEL_TO_ACTION = bidict({
+        'bucket-update': 'update_files',
+        'bucket-read': 'read_files',
+    })
+
     # Read access given to everyone.
     can_list = [AnyUser()]
     # Create action given to no one (Not even superusers) bc Deposits should
@@ -55,11 +61,21 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     can_create = [Disable()]
     # Read access given to everyone if public record/files and owners always.
     can_read = [AnyUserIfPublic(), RecordOwners()]
-    # can_read_files = [AnyUserIfPublicFiles(), RecordOwners()]
     # Update access given to record owners.
     can_update = [RecordOwners()]
     # Delete access given to admins only.
     can_delete = [Admin()]
+    # Associated files permissions (which are really bucket permissions)
+    can_read_files = [AnyUserIfPublic(), RecordOwners()]
+    can_update_files = [RecordOwners()]
+
+    def __init__(self, action, **over):
+        """Constructor."""
+        self.original_action = action
+        action = RecordPermissionPolicy.NEED_LABEL_TO_ACTION.get(
+            action, action
+        )
+        super(RecordPermissionPolicy, self).__init__(action, **over)
 
 
 def get_record_permission_policy():

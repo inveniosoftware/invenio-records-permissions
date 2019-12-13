@@ -9,6 +9,9 @@
 
 """Record Permission Factories."""
 
+from invenio_files_rest.models import Bucket
+from invenio_records_files.api import Record, RecordsBuckets
+
 from ..policies import get_record_permission_policy
 
 
@@ -30,12 +33,6 @@ def record_read_permission_factory(record=None):
     return PermissionPolicy(action='read', record=record)
 
 
-# TODO: Revisit when files permission have been discussed
-# def record_read_files_permission_factory(bucket=None):
-#     PermissionPolicy = get_record_permission_policy()
-#     return PermissionPolicy(action='read_files', bucket=bucket)
-
-
 def record_update_permission_factory(record=None):
     """Pre-configured record update permission factory."""
     PermissionPolicy = get_record_permission_policy()
@@ -46,3 +43,36 @@ def record_delete_permission_factory(record=None):
     """Pre-configured record delete permission factory."""
     PermissionPolicy = get_record_permission_policy()
     return PermissionPolicy(action='delete', record=record)
+
+
+def record_files_permission_factory(obj, action):
+    """Files permission factory for any action.
+
+    :param obj: An instance of :class:`invenio_files_rest.models.Bucket`.
+    :param action: The required action.
+    :raises RuntimeError: If the object is unknown or no record.
+    :returns: A :class:`invenio_records_permissions.policies.PermissionPolicy`
+        instance.
+    """
+    if isinstance(obj, Bucket):
+        bucket_id = str(obj.id)
+    else:
+        # TODO: Reassess if covering FileObject, MultipartObject, ObjectVersion
+        #       makes sense via bucket_id = str(obj.bucket_id)
+        raise RuntimeError('Unknown object')
+
+    # Retrieve record
+    # WARNING: invenio-records-files implies a one-to-one relationship
+    #          between Record and Bucket, but does not enforce it
+    #          "for better future" the invenio-records-files code says
+    record_bucket = \
+        RecordsBuckets.query.filter_by(bucket_id=bucket_id).one_or_none()
+    if record_bucket:
+        record_metadata = record_bucket.record
+        record = Record(record_metadata.json, model=record_metadata)
+    else:
+        raise RuntimeError('No record')
+
+    PermissionPolicy = get_record_permission_policy()
+
+    return PermissionPolicy(action=action, bucket=obj, record=record)

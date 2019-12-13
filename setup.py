@@ -28,6 +28,7 @@ tests_require = [
     'pytest-pep8>=1.0.6',
     'pytest-invenio>=1.0.5',
     'invenio-accounts>=1.1.1,<1.2.0',
+    'invenio_app>=1.2.3,<1.3.0',
     sphinx_require,
 ]
 
@@ -77,7 +78,8 @@ install_requires = [
     # backward change we also place an upper limit
     # https://invenio.readthedocs.io/en/latest/releases/maintenance-policy.html
     'invenio-access>=1.3.0,<1.4.0',
-    'invenio-records-files>=1.2.0,<1.3.0'
+    'invenio-records-files>=1.2.0,<1.3.0',
+    'bidict>=0.18.3'
 ]
 
 packages = find_packages()
