@@ -9,7 +9,7 @@
 
 """Record Permission Factories."""
 
-from invenio_files_rest.models import Bucket
+from invenio_files_rest.models import Bucket, ObjectVersion
 from invenio_records_files.api import Record, RecordsBuckets
 
 from ..policies import get_record_permission_policy
@@ -55,9 +55,13 @@ def record_files_permission_factory(obj, action):
         instance.
     """
     if isinstance(obj, Bucket):
+        # File creation
         bucket_id = str(obj.id)
+    elif isinstance(obj, ObjectVersion):
+        # File download
+        bucket_id = str(obj.bucket_id)
     else:
-        # TODO: Reassess if covering FileObject, MultipartObject, ObjectVersion
+        # TODO: Reassess if covering FileObject, MultipartObject
         #       makes sense via bucket_id = str(obj.bucket_id)
         raise RuntimeError('Unknown object')
 
@@ -75,4 +79,4 @@ def record_files_permission_factory(obj, action):
 
     PermissionPolicy = get_record_permission_policy()
 
-    return PermissionPolicy(action=action, bucket=obj, record=record)
+    return PermissionPolicy(action=action, record=record)

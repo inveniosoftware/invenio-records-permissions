@@ -51,7 +51,7 @@ class RecordPermissionPolicy(BasePermissionPolicy):
 
     NEED_LABEL_TO_ACTION = bidict({
         'bucket-update': 'update_files',
-        'bucket-read': 'read_files',
+        'object-read': 'read_files',
     })
 
     # Read access given to everyone.

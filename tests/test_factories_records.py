@@ -7,11 +7,13 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
+from io import BytesIO
+
 import pytest
 from elasticsearch_dsl import Q
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, superuser_access
-from invenio_files_rest.models import Bucket
+from invenio_files_rest.models import Bucket, ObjectVersion
 
 # TODO: Change to from invenio_records_permissions.factories import (...)
 #       If isort PR is merged:
@@ -121,13 +123,16 @@ def test_update_files_permission_factory(
 
 
 def test_read_files_permission_factory(
-        create_real_record, superuser_role_need):
+        create_real_record, db, superuser_role_need):
     record = create_real_record()
     bucket_id = record['_bucket']
-    bucket = Bucket.get(bucket_id)
-    action = 'bucket-read'
+    # TODO: Wait for repetition before making this a fixture
+    a_file = BytesIO(b"file content")
+    file_obj = ObjectVersion.create(bucket_id, "example.txt", stream=a_file)
+    db.session.commit()
+    action = 'object-read'
 
-    permission = record_files_permission_factory(bucket, action)
+    permission = record_files_permission_factory(file_obj, action)
 
     # any_user + super_user + owners
     assert permission.needs == {
