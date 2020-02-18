@@ -10,7 +10,6 @@
 """Access controls for records."""
 
 import six
-from bidict import bidict
 from flask import current_app
 from werkzeug.utils import import_string
 
@@ -45,10 +44,11 @@ def obj_or_import_string(value, default=None):
 class RecordPermissionPolicy(BasePermissionPolicy):
     """Access control configuration for records."""
 
-    NEED_LABEL_TO_ACTION = bidict({
+    NEED_LABEL_TO_ACTION = {
         'bucket-update': 'update_files',
+        'bucket-read': 'read_files',
         'object-read': 'read_files',
-    })
+    }
 
     # Read access given to everyone.
     can_list = [AnyUser()]
