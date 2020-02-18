@@ -27,7 +27,7 @@ tests_require = [
     'pytest-mock>=1.6.0',
     'pytest-pep8>=1.0.6',
     'pytest-invenio>=1.0.5',
-    'invenio-accounts>=1.1.1,<1.2.0',
+    'invenio-accounts>=1.1.2,<1.2.0',
     'invenio_app>=1.2.3,<1.3.0',
     sphinx_require,
 ]
@@ -72,7 +72,7 @@ setup_requires = [
 ]
 
 install_requires = [
-    'Flask-BabelEx>=0.9.3',
+    'Flask-BabelEx>=0.9.4',
     'Flask-Principal>=0.4.0,<0.5.0',
     # Because of versioning policy that may admit minor incompatible (!)
     # backward change we also place an upper limit
