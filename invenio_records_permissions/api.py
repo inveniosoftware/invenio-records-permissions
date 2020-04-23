@@ -8,8 +8,6 @@
 
 """Invenio Records Permissions API."""
 
-from __future__ import absolute_import, print_function
-
 from elasticsearch_dsl.query import Q
 from flask import current_app
 from invenio_search.api import DefaultFilter, RecordsSearch
