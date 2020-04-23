@@ -12,11 +12,18 @@ from elasticsearch_dsl.query import Q
 from flask import current_app
 from invenio_search.api import DefaultFilter, RecordsSearch
 
+from .factories import record_read_permission_factory
+
 
 def rdm_records_filter():
     """Records filter."""
     # TODO: Implement with new permissions metadata
-    perm_factory = current_app.config['RECORDS_REST_ENDPOINTS']['recid']['read_permission_factory_imp']()  # noqa
+    try:
+        perm_factory = current_app.config["RECORDS_REST_ENDPOINTS"]["recid"][
+            "read_permission_factory_imp"
+        ]()  # noqa
+    except KeyError:
+        perm_factory = record_read_permission_factory
     # FIXME: this might fail if factory returns None, meaning no "query_filter"
     # was implemente in the generators. However, IfPublic should always be
     # there.
@@ -40,6 +47,6 @@ class RecordsSearch(RecordsSearch):
     class Meta:
         """Default index and filter for frontpage search."""
 
-        index = 'records'
+        index = "records"
         doc_types = None
         default_filter = DefaultFilter(rdm_records_filter)
