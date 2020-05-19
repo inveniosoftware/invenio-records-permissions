@@ -19,22 +19,16 @@ history = open('CHANGES.rst').read()
 sphinx_require = 'Sphinx>=1.5.1'
 
 tests_require = [
-    'check-manifest>=0.25',
-    'coverage>=4.0',
-    'isort>=4.3.3',
-    'pydocstyle>=2.0.0',
-    'pytest-cov>=2.5.1',
     'pytest-mock>=1.6.0',
-    'pytest-pep8>=1.0.6',
-    'pytest-invenio>=1.0.5',
-    'invenio-accounts>=1.1.2,<1.2.0',
-    'invenio_app>=1.2.3,<1.3.0',
+    'pytest-invenio>=1.3.2,<2.0.0',
+    'invenio-accounts>=1.3.0,<2.0.0',
+    'invenio-app>=1.3.0,<2.0.0',
     sphinx_require,
 ]
 
 # Should follow inveniosoftware/invenio versions
-invenio_db_version = '>=1.0.4,<1.1.0'
-invenio_search_version = '>=1.2.0,<1.3.0'
+invenio_db_version = '>=1.0.5,<2.0.0'
+invenio_search_version = '>=1.3.1,<2.0.0'
 
 extras_require = {
     'elasticsearch6': [
@@ -73,12 +67,12 @@ setup_requires = [
 
 install_requires = [
     'Flask-BabelEx>=0.9.4',
-    'Flask-Principal>=0.4.0,<0.5.0',
+    'Flask-Principal>=0.4.0',
     # Because of versioning policy that may admit minor incompatible (!)
     # backward change we also place an upper limit
     # https://invenio.readthedocs.io/en/latest/releases/maintenance-policy.html
-    'invenio-access>=1.3.0,<1.4.0',
-    'invenio-records-files>=1.2.0,<1.3.0',
+    'invenio-access>=1.4.1,<2.0.0',
+    'invenio-records-files>=1.2.1,<2.0.0',
 ]
 
 packages = find_packages()
