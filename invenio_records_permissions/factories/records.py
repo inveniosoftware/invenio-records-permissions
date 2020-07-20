@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -15,10 +15,10 @@ from invenio_records_files.api import Record, RecordsBuckets
 from ..policies import get_record_permission_policy
 
 
-def record_list_permission_factory(record=None):
-    """Pre-configured record list permission factory."""
+def record_search_permission_factory(record=None):
+    """Pre-configured record search permission factory."""
     PermissionPolicy = get_record_permission_policy()
-    return PermissionPolicy(action='list')
+    return PermissionPolicy(action='search')
 
 
 def record_create_permission_factory(record=None):

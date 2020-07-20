@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -20,7 +20,7 @@ from invenio_files_rest.models import Bucket, ObjectVersion
 #       https://github.com/inveniosoftware/cookiecutter-invenio-module/pull/129
 from invenio_records_permissions import record_create_permission_factory, \
     record_delete_permission_factory, record_files_permission_factory, \
-    record_list_permission_factory, record_read_permission_factory, \
+    record_read_permission_factory, record_search_permission_factory, \
     record_update_permission_factory
 
 
@@ -35,13 +35,13 @@ def record(create_record):
     })
 
 
-def test_record_list_permission_factory(app, superuser_role_need):
-    list_perm = record_list_permission_factory()
+def test_record_search_permission_factory(app, superuser_role_need):
+    search_perm = record_search_permission_factory()
 
     # Loading permissions in invenio-access always adds superuser
-    assert list_perm.needs == {superuser_role_need, any_user}
-    assert list_perm.excludes == set()
-    assert list_perm.query_filters == [Q('match_all')]
+    assert search_perm.needs == {superuser_role_need, any_user}
+    assert search_perm.excludes == set()
+    assert search_perm.query_filters == [Q('match_all')]
 
 
 def test_record_create_permission_factory(app, record, superuser_role_need):

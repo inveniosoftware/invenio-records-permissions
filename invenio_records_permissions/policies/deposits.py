@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -24,7 +24,7 @@ from .base import BasePermissionPolicy
 class DepositPermissionPolicy(BasePermissionPolicy):
     """Access control configuration for deposits."""
 
-    can_list = [RecordOwners()]
+    can_search = [RecordOwners()]
     can_create = [AnyUser()]
     can_read = [RecordOwners()]
     can_update = []

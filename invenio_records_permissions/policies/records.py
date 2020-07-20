@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -51,7 +51,7 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     }
 
     # Read access given to everyone.
-    can_list = [AnyUser()]
+    can_search = [AnyUser()]
     # Create action given to no one (Not even superusers) bc Deposits should
     # be used.
     can_create = [Disable()]

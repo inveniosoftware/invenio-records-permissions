@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -121,11 +121,10 @@ Here is an example of a custom record Policy:
     from invenio_records_permissions.generators import AnyUser, RecordOwners, \
         SuperUser
     from invenio_records_permissions.policies.base import BasePermissionPolicy
-    from invenio_records_permissions.policies.base import BasePermissionPolicy
 
     class ExampleRecordPermissionPolicy(BasePermissionPolicy):
         can_create = [AnyUser()]
-        can_list = [AnyUser()]
+        can_search = [AnyUser()]
         can_read = [AnyUser()]
         can_update = [RecordOwners()]
         can_foo_bar = [SuperUser()]
@@ -190,7 +189,7 @@ By setting the following configuration in your instance:
             # ...
             # We only display key-value pairs relevant to this explanation
             'read_permission_factory_imp': 'invenio_records_permissions.factories.record_read_permission_factory',  # noqa
-            'list_permission_factory_imp': 'invenio_records_permissions.factories.record_list_permission_factory',  # noqa
+            'list_permission_factory_imp': 'invenio_records_permissions.factories.record_search_permission_factory',  # noqa
             'create_permission_factory_imp': 'invenio_records_permissions.factories.record_create_permission_factory',  # noqa
             'update_permission_factory_imp': 'invenio_records_permissions.factories.record_update_permission_factory',  # noqa
             'delete_permission_factory_imp': 'invenio_records_permissions.factories.record_delete_permission_factory'  # noqa
@@ -218,12 +217,10 @@ With that, we covered all you need to know to fully specify access control in
 your instance: combine and use permission Generators, Policies and Factories.
 """
 
-from __future__ import absolute_import, print_function
-
 from .ext import InvenioRecordsPermissions
 from .factories import record_create_permission_factory, \
     record_delete_permission_factory, record_files_permission_factory, \
-    record_list_permission_factory, record_read_permission_factory, \
+    record_read_permission_factory, record_search_permission_factory, \
     record_update_permission_factory
 from .policies import BasePermissionPolicy, DepositPermissionPolicy, \
     RecordPermissionPolicy
@@ -241,7 +238,7 @@ __all__ = (
     'record_create_permission_factory',
     'record_delete_permission_factory',
     'record_files_permission_factory',
-    'record_list_permission_factory',
+    'record_search_permission_factory',
     'record_read_permission_factory',
     'record_update_permission_factory',
 )

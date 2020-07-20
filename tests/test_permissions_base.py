@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -17,7 +17,7 @@ from invenio_records_permissions.policies import BasePermissionPolicy
 def test_base_permission_policy_generators(app):
     policy = BasePermissionPolicy
 
-    for action in ['list', 'read', 'update', 'delete']:
+    for action in ['search', 'read', 'update', 'delete']:
         generators = policy(action=action).generators
         assert len(generators) == 0
 
@@ -26,7 +26,7 @@ def test_base_permission_policy_generators(app):
 
 class TestPermissionPolicy(BasePermissionPolicy):
     can_create = [AnyUser()]
-    can_list = [AnyUser()]
+    can_search = [AnyUser()]
     can_read = [AnyUser()]
     can_foo_bar = [AnyUser()]
 
@@ -35,7 +35,7 @@ def test_permission_policy_generators(app):
     policy = TestPermissionPolicy
 
     assert isinstance(policy(action='create').generators[0], AnyUser)
-    assert isinstance(policy(action='list').generators[0], AnyUser)
+    assert isinstance(policy(action='search').generators[0], AnyUser)
     assert isinstance(policy(action='read').generators[0], AnyUser)
     assert isinstance(policy(action='foo_bar').generators[0], AnyUser)
     assert len(policy(action='update').generators) == 0
@@ -45,7 +45,7 @@ def test_permission_policy_generators(app):
 
 def test_permission_policy_needs_excludes(superuser_role_need):
     create_perm = TestPermissionPolicy(action='create')
-    list_perm = TestPermissionPolicy(action='list')
+    list_perm = TestPermissionPolicy(action='search')
     read_perm = TestPermissionPolicy(action='read')
     update_perm = TestPermissionPolicy(action='update')
     delete_perm = TestPermissionPolicy(action='delete')
