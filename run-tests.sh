@@ -9,7 +9,7 @@
 # more details.
 
 pydocstyle invenio_records_permissions tests docs && \
-isort --recursive --check-only --diff && \
+isort invenio_records_permissions tests --check-only --diff && \
 check-manifest --ignore ".travis-*,.vscode*" && \
 sphinx-build -qnNW docs docs/_build/html && \
 python setup.py test
