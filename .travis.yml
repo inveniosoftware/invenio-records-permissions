@@ -63,6 +63,7 @@ before_install:
 install:
   - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
   - "travis_retry pip install -e .[${EXTRAS}]"
+  - "pip freeze"
 
 before_script:
   # Allow ES to start
