@@ -13,6 +13,4 @@ This file is imported by ``invenio_records_permissions.__init__``,
 and parsed by ``setup.py``.
 """
 
-from __future__ import absolute_import, print_function
-
-__version__ = '0.8.0'
+__version__ = '0.9.0'
