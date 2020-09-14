@@ -65,12 +65,8 @@ setup_requires = [
 ]
 
 install_requires = [
-    'Flask-BabelEx>=0.9.4',
-    'Flask-Principal>=0.4.0',
-    # Because of versioning policy that may admit minor incompatible (!)
-    # backward change we also place an upper limit
-    # https://invenio.readthedocs.io/en/latest/releases/maintenance-policy.html
     'invenio-access>=1.4.1,<2.0.0',
+    'invenio-i18n>=1.2.0',
     'invenio-records-files>=1.2.1,<2.0.0',
 ]
 
