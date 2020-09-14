@@ -18,7 +18,7 @@ from invenio_access.models import ActionRoles
 from invenio_access.permissions import superuser_access
 from invenio_accounts.models import Role
 from invenio_app.factory import create_app as _create_app
-from invenio_records_files.api import Record
+from invenio_records.api import Record
 
 
 @pytest.fixture(scope='module')

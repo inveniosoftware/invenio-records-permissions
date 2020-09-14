@@ -18,9 +18,7 @@ from elasticsearch_dsl.query import Q
 from flask import g
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, superuser_access
-from invenio_files_rest.models import Bucket, ObjectVersion
-from invenio_records_files.api import Record
-from invenio_records_files.models import RecordsBuckets
+from invenio_records.api import Record
 
 
 class Generator(object):

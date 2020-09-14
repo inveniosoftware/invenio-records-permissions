@@ -10,6 +10,5 @@
 """Pre-configured Permission Factories."""
 
 from .records import record_create_permission_factory, \
-    record_delete_permission_factory, record_files_permission_factory, \
-    record_read_permission_factory, record_search_permission_factory, \
-    record_update_permission_factory
+    record_delete_permission_factory, record_read_permission_factory, \
+    record_search_permission_factory, record_update_permission_factory

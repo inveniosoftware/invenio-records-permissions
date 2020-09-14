@@ -9,8 +9,7 @@
 
 """Record Permission Factories."""
 
-from invenio_files_rest.models import Bucket, ObjectVersion
-from invenio_records_files.api import Record, RecordsBuckets
+from invenio_records.api import Record
 
 from ..policies import get_record_permission_policy
 
@@ -43,43 +42,3 @@ def record_delete_permission_factory(record=None):
     """Pre-configured record delete permission factory."""
     PermissionPolicy = get_record_permission_policy()
     return PermissionPolicy(action='delete', record=record)
-
-
-def record_files_permission_factory(obj, action):
-    """Files permission factory for any action.
-
-    :param obj: An instance of `invenio_files_rest.models.Bucket
-                <https://invenio-files-rest.readthedocs.io/en/latest/api.html
-                #invenio_files_rest.models.Bucket>`_.
-    :param action: The required action.
-    :raises RuntimeError: If the object is unknown or no record.
-    :returns: A
-        :class:`invenio_records_permissions.policies.base.BasePermissionPolicy`
-        instance.
-    """
-    if isinstance(obj, Bucket):
-        # File creation
-        bucket_id = str(obj.id)
-    elif isinstance(obj, ObjectVersion):
-        # File download
-        bucket_id = str(obj.bucket_id)
-    else:
-        # TODO: Reassess if covering FileObject, MultipartObject
-        #       makes sense via bucket_id = str(obj.bucket_id)
-        raise RuntimeError('Unknown object')
-
-    # Retrieve record
-    # WARNING: invenio-records-files implies a one-to-one relationship
-    #          between Record and Bucket, but does not enforce it
-    #          "for better future" the invenio-records-files code says
-    record_bucket = \
-        RecordsBuckets.query.filter_by(bucket_id=bucket_id).one_or_none()
-    if record_bucket:
-        record_metadata = record_bucket.record
-        record = Record(record_metadata.json, model=record_metadata)
-    else:
-        raise RuntimeError('No record')
-
-    PermissionPolicy = get_record_permission_policy()
-
-    return PermissionPolicy(action=action, record=record)

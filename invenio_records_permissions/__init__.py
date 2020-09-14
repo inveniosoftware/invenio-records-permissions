@@ -219,9 +219,8 @@ your instance: combine and use permission Generators, Policies and Factories.
 
 from .ext import InvenioRecordsPermissions
 from .factories import record_create_permission_factory, \
-    record_delete_permission_factory, record_files_permission_factory, \
-    record_read_permission_factory, record_search_permission_factory, \
-    record_update_permission_factory
+    record_delete_permission_factory, record_read_permission_factory, \
+    record_search_permission_factory, record_update_permission_factory
 from .policies import BasePermissionPolicy, DepositPermissionPolicy, \
     RecordPermissionPolicy
 from .version import __version__
@@ -237,7 +236,6 @@ __all__ = (
     # https://github.com/inveniosoftware/cookiecutter-invenio-module/pull/129
     'record_create_permission_factory',
     'record_delete_permission_factory',
-    'record_files_permission_factory',
     'record_search_permission_factory',
     'record_read_permission_factory',
     'record_update_permission_factory',
