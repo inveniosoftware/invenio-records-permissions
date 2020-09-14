@@ -12,4 +12,8 @@ pydocstyle invenio_records_permissions tests docs && \
 isort invenio_records_permissions tests --check-only --diff && \
 check-manifest --ignore ".travis-*,.vscode*" && \
 sphinx-build -qnNW docs docs/_build/html && \
-python setup.py test
+docker-services-cli up es postgresql
+python -m pytest
+tests_exit_code=$?
+docker-services-cli down
+exit "$tests_exit_code"

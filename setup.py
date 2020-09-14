@@ -20,7 +20,7 @@ sphinx_require = 'Sphinx>=1.5.1'
 
 tests_require = [
     'pytest-mock>=1.6.0',
-    'pytest-invenio>=1.3.2,<2.0.0',
+    'pytest-invenio>=1.3.3,<2.0.0',
     'invenio-accounts>=1.3.0,<2.0.0',
     'invenio-app>=1.3.0,<2.0.0',
     sphinx_require,
