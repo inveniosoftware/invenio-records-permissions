@@ -8,10 +8,10 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-pydocstyle invenio_records_permissions tests docs && \
-isort invenio_records_permissions tests --check-only --diff && \
-check-manifest --ignore ".travis-*,.vscode*" && \
-sphinx-build -qnNW docs docs/_build/html && \
+python -m pydocstyle invenio_records_permissions tests docs && \
+python -m isort invenio_records_permissions tests --check-only --diff && \
+python -m check_manifest --ignore ".travis-*" && \
+python -m sphinx.cmd.build -qnNW docs docs/_build/html && \
 docker-services-cli up es postgresql
 python -m pytest
 tests_exit_code=$?
