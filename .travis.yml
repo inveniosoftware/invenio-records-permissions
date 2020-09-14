@@ -8,7 +8,11 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-#FIXME see https://github.com/inveniosoftware/invenio-access/issues/129
+# blocklist
+branches:
+  except:
+  - /^v\d+\.\d+(\.\d+)?(\S*)?$/
+
 dist: trusty
 
 addons:
@@ -74,15 +78,3 @@ script:
 
 after_success:
   - coveralls
-
-deploy:
-  provider: pypi
-  user: inveniosoftware
-  password:
-    secure: "dpoGzB6JyC6Espf5+MAdBs8yRDGJnWLxi7mN8wjxCj7+rhCOHtDqBYrri++SBwvfXyLapnGJvefHnToP0QKVF4IwRgKGRToP4G39iD/DN/c8N9n5gE3SvJ6fkgWx1mL1q1VxotF6l7VTu/e2YWsCjRt40cglbvT7v1tHntGndivTnkbipHhMtIcwIIXf7IkEXq/vf2in2kY4UhWwhmpIz8J7uoWawWi3QuPh5j1Ke470defniD/MDtEswPjZ24eSVSi0dLIMowRB7x8BL1QqtfhcU3LnlKYOblFo/kWgzHOS9rc2c/rmoirBZK5qlBtFa8qxq9+remnw2+sDzZRY+l1His+ps0ppj7NJcyGOzgmDN1q7py8bYnq++KajGj7ETc4pVKUB4EkJ7m/a0cZ81cmPLQprCR0YCS1CnuFGRjk6pWjzQEyJJPqyUy9CL0cjbMYQyyZw0XGYTcmpWU+ERZ0ljTqOPPRxzZGuQp+KzxxNFVQf1+fuUiJlI8d3i3A7IYigPZf53NHgwwb1VK367Jr/RF9Rt5WnRRhWJOd84pZILlsZofPSzPV4L+/y/yPaY45xt6nqDiiBt9tPge6hGEnUQxrD4uT8T4yUQqhf1/RUdHUo1T4SHmqkmXKsc3OjvJWG2zWyEgtfAA8mNEcMwzQCvcfAJ2/VACKFjjGHx7c="
-  distributions: "compile_catalog sdist bdist_wheel"
-  on:
-    tags: true
-    python: "3.6"
-    repo: inveniosoftware/invenio-records-permissions
-    condition: $DEPLOY = true
