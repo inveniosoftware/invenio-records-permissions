@@ -74,17 +74,17 @@ def test_record_owner(create_record, mocker):
     ]
     assert generator.excludes(record=record) == []
 
-    # Anonymous identity
-    patched_g = mocker.patch('invenio_records_permissions.generators.g')
-    patched_g.identity.provides = []
-
-    assert not generator.query_filter()
+    # Anonymous identity.
+    assert not generator.query_filter(identity=mocker.Mock(provides=[]))
 
     # Authenticated identity
-    patched_g = mocker.patch('invenio_records_permissions.generators.g')
-    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+    query_filter = generator.query_filter(
+        identity=mocker.Mock(
+            provides=[mocker.Mock(method='id', value=1)]
+        )
+    )
 
-    assert generator.query_filter().to_dict() == {'term': {'owners': 1}}
+    assert query_filter.to_dict() == {'term': {'owners': 1}}
 
 
 def test_any_user_if_public(create_record):
@@ -141,11 +141,14 @@ def test_allowedbyaccesslevels_query_filter(mocker):
 
     # User that has been allowed
     generator = AllowedByAccessLevel()
-    patched_g = mocker.patch('invenio_records_permissions.generators.g')
-    patched_g.identity.provides = [mocker.Mock(method='id', value=1)]
+    query_filter = generator.query_filter(
+        identity=mocker.Mock(
+            provides=[mocker.Mock(method='id', value=1)]
+        )
+    )
 
     # TODO: Update to account for other 'read' access levels
-    assert generator.query_filter().to_dict() == {
+    assert query_filter.to_dict() == {
         'term': {
             'internal.access_levels.metadata_curator': {
                 'scheme': 'person', 'id': 1
@@ -155,7 +158,10 @@ def test_allowedbyaccesslevels_query_filter(mocker):
 
     # User that doesn't provide 'id'
     generator = AllowedByAccessLevel()
-    patched_g = mocker.patch('invenio_records_permissions.generators.g')
-    patched_g.identity.provides = [mocker.Mock(method='foo', value=1)]
+    query_filter = generator.query_filter(
+        identity=mocker.Mock(
+            provides=[mocker.Mock(method='foo', value=1)]
+        )
+    )
 
-    assert generator.query_filter() == []
+    assert query_filter == []

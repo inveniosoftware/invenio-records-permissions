@@ -45,9 +45,6 @@ class BasePermissionPolicy(Permission):
     If `can_<self.action>`
         is not defined, no one is allowed (Disable()).
         is an empty list, only Super Users are allowed (via NOTE above).
-
-    TODO: Recognize a PermissionPolicy class in other modules instead of
-          individual factory functions to lessen the configuration burden.
     """
 
     can_search = []

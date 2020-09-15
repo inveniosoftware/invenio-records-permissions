@@ -10,5 +10,4 @@
 """Invenio Records Permissions Policies."""
 
 from .base import BasePermissionPolicy
-from .deposits import DepositPermissionPolicy
 from .records import RecordPermissionPolicy, get_record_permission_policy

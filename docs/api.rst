@@ -29,10 +29,3 @@ Policies
 
 .. autoclass:: invenio_records_permissions.policies.records.RecordPermissionPolicy
    :members:
-
-
-Factories
----------
-
-.. automodule:: invenio_records_permissions.factories.records
-   :members:

@@ -78,8 +78,7 @@ def get_record_permission_policy():
     """Return RecordPermissionPolicy.
 
     Relies on ``RECORDS_PERMISSIONS_RECORD_POLICY`` to
-    automatically configure functionality. This way the hoster doesn't need to
-    define their own CRUD factories (functions) anymore.
+    automatically configure functionality.
     """
     return obj_or_import_string(
         current_app.config.get('RECORDS_PERMISSIONS_RECORD_POLICY'),

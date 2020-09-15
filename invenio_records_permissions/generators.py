@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019 CERN.
-# Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -15,7 +15,6 @@ from functools import reduce
 from itertools import chain
 
 from elasticsearch_dsl.query import Q
-from flask import g
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, superuser_access
 from invenio_records.api import Record
@@ -71,7 +70,7 @@ class SuperUser(Generator):
         """Enabling Needs."""
         return [superuser_access]
 
-    def query_filter(self, record=None, **kwargs):
+    def query_filter(self, **kwargs):
         """Filters for current identity as super user."""
         # TODO: Implement with new permissions metadata
         return []
@@ -112,11 +111,9 @@ class RecordOwners(Generator):
         """Enabling Needs."""
         return [UserNeed(owner) for owner in record.get('owners', [])]
 
-    def query_filter(self, record=None, **kwargs):
+    def query_filter(self, identity=None, **kwargs):
         """Filters for current identity as owner."""
-        # TODO: Implement with new permissions metadata
-        provides = g.identity.provides
-        for need in provides:
+        for need in identity.provides:
             if need.method == 'id':
                 return Q('term', owners=need.value)
         return []
@@ -128,7 +125,7 @@ class AnyUserIfPublic(Generator):
     TODO: Revisit when dealing with files.
     """
 
-    def needs(self, record=None, **rest_over):
+    def needs(self, record=None, **kwargs):
         """Enabling Needs."""
         is_restricted = (
             record and
@@ -136,11 +133,11 @@ class AnyUserIfPublic(Generator):
         )
         return [any_user] if not is_restricted else []
 
-    def excludes(self, record=None, **rest_over):
+    def excludes(self, record=None, **kwargs):
         """Preventing Needs."""
         return []
 
-    def query_filter(self, *args, **kwargs):
+    def query_filter(self, **kwargs):
         """Filters for non-restricted records."""
         # TODO: Implement with new permissions metadata
         return Q('term', **{"_access.metadata_restricted": False})
@@ -188,10 +185,10 @@ class AllowedByAccessLevel(Generator):
             # TODO: Implement other schemes
         ]
 
-    def query_filter(self, *args, **kwargs):
+    def query_filter(self, identity=None, **kwargs):
         """Search filter for the current user with this generator."""
         id_need = next(
-            (need for need in g.identity.provides if need.method == 'id'),
+            (need for need in identity.provides if need.method == 'id'),
             None
         )
 
