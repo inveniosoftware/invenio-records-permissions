@@ -94,6 +94,9 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
+        'invenio_base.api_apps': [
+            'invenio_records_permissions = invenio_records_permissions:InvenioRecordsPermissions',
+        ],
         'invenio_base.apps': [
             'invenio_records_permissions = invenio_records_permissions:InvenioRecordsPermissions',
         ],
