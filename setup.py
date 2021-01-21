@@ -16,35 +16,35 @@ from setuptools import find_packages, setup
 readme = open('README.rst').read()
 history = open('CHANGES.rst').read()
 
-sphinx_require = 'Sphinx>=1.5.1'
+sphinx_require = 'Sphinx>=3'
 
 tests_require = [
     'pytest-mock>=1.6.0',
-    'pytest-invenio>=1.3.3,<2.0.0',
-    'invenio-accounts>=1.3.0,<2.0.0',
-    'invenio-app>=1.3.0,<2.0.0',
+    'pytest-invenio>=1.4.1',
+    'invenio-accounts>=1.4.3',
+    'invenio-app>=1.3.0',
     sphinx_require,
 ]
 
 # Should follow inveniosoftware/invenio versions
-invenio_db_version = '>=1.0.5,<2.0.0'
 invenio_search_version = '>=1.4.0,<2.0.0'
+invenio_db_version = '>=1.0.5,<2.0.0'
 
 extras_require = {
     'elasticsearch6': [
-        'invenio-search[elasticsearch6]>={}'.format(invenio_search_version),
+        f'invenio-search[elasticsearch6]{invenio_search_version}'
     ],
     'elasticsearch7': [
-        'invenio-search[elasticsearch7]>={}'.format(invenio_search_version),
+        f'invenio-search[elasticsearch7]{invenio_search_version}'
     ],
     'mysql': [
-        'invenio-db[mysql,versioning]{}'.format(invenio_db_version),
+        f'invenio-db[mysql,versioning]{invenio_db_version}'
     ],
     'postgresql': [
-        'invenio-db[postgresql,versioning]{}'.format(invenio_db_version),
+        f'invenio-db[postgresql,versioning]{invenio_db_version}'
     ],
     'sqlite': [
-        'invenio-db[versioning]{}'.format(invenio_db_version),
+        f'invenio-db[versioning]{invenio_db_version}'
     ],
     'docs': [
         sphinx_require,

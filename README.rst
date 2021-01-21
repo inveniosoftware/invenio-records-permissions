@@ -9,8 +9,8 @@
  Invenio-Records-Permissions
 =============================
 
-.. image:: https://img.shields.io/travis/inveniosoftware/invenio-records-permissions.svg
-        :target: https://travis-ci.org/inveniosoftware/invenio-records-permissions
+.. image:: https://github.com/inveniosoftware/invenio-records-permissions/workflows/CI/badge.svg
+        :target: https://github.com/inveniosoftware/invenio-records-permissions/actions?query=workflow%3ACI+branch%3Amaster
 
 .. image:: https://img.shields.io/coveralls/inveniosoftware/invenio-records-permissions.svg
         :target: https://coveralls.io/r/inveniosoftware/invenio-records-permissions
