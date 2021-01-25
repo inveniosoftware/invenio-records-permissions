@@ -11,11 +11,12 @@ import copy
 
 import pytest
 from flask_principal import ActionNeed, UserNeed
-from invenio_access.permissions import any_user, superuser_access
+from invenio_access.permissions import any_user, authenticated_user, \
+    superuser_access
 
 from invenio_records_permissions.generators import Admin, \
-    AllowedByAccessLevel, AnyUser, AnyUserIfPublic, Disable, Generator, \
-    RecordOwners, SuperUser
+    AllowedByAccessLevel, AnyUser, AnyUserIfPublic, AuthenticatedUser, \
+    Disable, Generator, RecordOwners, SuperUser
 
 
 def test_generator():
@@ -107,6 +108,15 @@ def test_any_user_if_public(create_record):
     assert generator.query_filter().to_dict() == {
         'term': {"_access.metadata_restricted": False}
     }
+
+
+def test_authenticateduser():
+    """Test Generator AuthenticatedUser."""
+    generator = AuthenticatedUser()
+
+    assert generator.needs() == [authenticated_user]
+    assert generator.excludes() == []
+    assert generator.query_filter().to_dict() == {'match_all': {}}
 
 
 @pytest.mark.parametrize("action", ['read', 'update', 'delete'])

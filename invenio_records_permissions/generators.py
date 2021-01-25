@@ -16,7 +16,8 @@ from itertools import chain
 
 from elasticsearch_dsl.query import Q
 from flask_principal import ActionNeed, UserNeed
-from invenio_access.permissions import any_user, superuser_access
+from invenio_access.permissions import any_user, authenticated_user, \
+    superuser_access
 from invenio_records.api import Record
 
 
@@ -141,6 +142,23 @@ class AnyUserIfPublic(Generator):
         """Filters for non-restricted records."""
         # TODO: Implement with new permissions metadata
         return Q('term', **{"_access.metadata_restricted": False})
+
+
+class AuthenticatedUser(Generator):
+    """Allows authenticated users."""
+
+    def __init__(self):
+        """Constructor."""
+        super(AuthenticatedUser, self).__init__()
+
+    def needs(self, **kwargs):
+        """Enabling Needs."""
+        return [authenticated_user]
+
+    def query_filter(self, **kwargs):
+        """Filters for current identity as super user."""
+        # TODO: Implement with new permissions metadata
+        return Q('match_all')
 
 
 class AllowedByAccessLevel(Generator):
