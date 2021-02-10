@@ -17,7 +17,7 @@ from itertools import chain
 from elasticsearch_dsl.query import Q
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, authenticated_user, \
-    superuser_access
+    superuser_access, system_process
 from invenio_records.api import Record
 
 
@@ -73,6 +73,23 @@ class SuperUser(Generator):
 
     def query_filter(self, **kwargs):
         """Filters for current identity as super user."""
+        # TODO: Implement with new permissions metadata
+        return []
+
+
+class SystemProcess(Generator):
+    """Allows system processes."""
+
+    def __init__(self):
+        """Constructor."""
+        super(SystemProcess, self).__init__()
+
+    def needs(self, **kwargs):
+        """Enabling Needs."""
+        return [system_process]
+
+    def query_filter(self, **kwargs):
+        """Filters for current identity as system process."""
         # TODO: Implement with new permissions metadata
         return []
 

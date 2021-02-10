@@ -65,9 +65,9 @@ setup_requires = [
 ]
 
 install_requires = [
-    'invenio-access>=1.4.1,<2.0.0',
+    'invenio-access>=1.4.2,<2.0.0',
     'invenio-i18n>=1.2.0',
-    'invenio-records>=1.3.2'
+    'invenio-records>=1.4.0'
 ]
 
 packages = find_packages()
