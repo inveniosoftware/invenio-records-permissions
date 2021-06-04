@@ -91,7 +91,7 @@ class SystemProcess(Generator):
     def query_filter(self, **kwargs):
         """Filters for current identity as system process."""
         # TODO: Implement with new permissions metadata
-        return []
+        return Q('match_all')
 
 
 class Disable(Generator):
