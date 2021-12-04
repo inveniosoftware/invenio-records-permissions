@@ -16,14 +16,11 @@ from setuptools import find_packages, setup
 readme = open('README.rst').read()
 history = open('CHANGES.rst').read()
 
-sphinx_require = 'Sphinx>=3'
-
 tests_require = [
     'pytest-mock>=1.6.0',
     'pytest-invenio>=1.4.1',
     'invenio-accounts>=1.4.3',
     'invenio-app>=1.3.0',
-    sphinx_require,
 ]
 
 # Should follow inveniosoftware/invenio versions
@@ -47,7 +44,7 @@ extras_require = {
         f'invenio-db[versioning]{invenio_db_version}'
     ],
     'docs': [
-        sphinx_require,
+        'Sphinx==4.2.0',
     ],
     'tests': tests_require,
 }
@@ -60,8 +57,7 @@ for name, reqs in extras_require.items():
     extras_require['all'].extend(reqs)
 
 setup_requires = [
-    'Babel>=1.3',
-    'pytest-runner>=3.0.0,<5',
+    'Babel>=2.8',
 ]
 
 install_requires = [
