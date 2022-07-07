@@ -14,7 +14,6 @@ import operator
 from functools import reduce
 from itertools import chain
 
-from elasticsearch_dsl.query import Q
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import (
     any_user,
@@ -23,6 +22,7 @@ from invenio_access.permissions import (
     system_process,
 )
 from invenio_records.api import Record
+from invenio_search.engine import dsl
 
 
 class Generator(object):
@@ -43,7 +43,7 @@ class Generator(object):
         return []
 
     def query_filter(self, **kwargs):
-        """Elasticsearch filters."""
+        """Search filters."""
         return []
 
 
@@ -61,7 +61,7 @@ class AnyUser(Generator):
     def query_filter(self, **kwargs):
         """Match all in search."""
         # TODO: Implement with new permissions metadata
-        return Q("match_all")
+        return dsl.Q("match_all")
 
 
 class SuperUser(Generator):
@@ -78,7 +78,7 @@ class SuperUser(Generator):
     def query_filter(self, identity=None, **kwargs):
         """Filters for current identity as super user."""
         if superuser_access in identity.provides:
-            return Q("match_all")
+            return dsl.Q("match_all")
         else:
             return []
 
@@ -97,7 +97,7 @@ class SystemProcess(Generator):
     def query_filter(self, identity=None, **kwargs):
         """Filters for current identity as system process."""
         if system_process in identity.provides:
-            return Q("match_all")
+            return dsl.Q("match_all")
         else:
             return []
 
@@ -115,7 +115,7 @@ class Disable(Generator):
 
     def query_filter(self, **kwargs):
         """Match None in search."""
-        return ~Q("match_all")
+        return ~dsl.Q("match_all")
 
 
 class Admin(Generator):
@@ -141,7 +141,7 @@ class RecordOwners(Generator):
         """Filters for current identity as owner."""
         for need in identity.provides:
             if need.method == "id":
-                return Q("term", owners=need.value)
+                return dsl.Q("term", owners=need.value)
         return []
 
 
@@ -165,7 +165,7 @@ class AnyUserIfPublic(Generator):
     def query_filter(self, **kwargs):
         """Filters for non-restricted records."""
         # TODO: Implement with new permissions metadata
-        return Q("term", **{"_access.metadata_restricted": False})
+        return dsl.Q("term", **{"_access.metadata_restricted": False})
 
 
 class AuthenticatedUser(Generator):
@@ -182,7 +182,7 @@ class AuthenticatedUser(Generator):
     def query_filter(self, **kwargs):
         """Filters for current identity as super user."""
         # TODO: Implement with new permissions metadata
-        return Q("match_all")
+        return dsl.Q("match_all")
 
 
 class AllowedByAccessLevel(Generator):
@@ -245,7 +245,7 @@ class AllowedByAccessLevel(Generator):
         read_levels = AllowedByAccessLevel.ACTION_TO_ACCESS_LEVELS.get("read", [])
 
         queries = [
-            Q(
+            dsl.Q(
                 "term",
                 **{
                     "internal.access_levels.{}".format(access_level): {

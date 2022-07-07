@@ -7,7 +7,6 @@
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-from elasticsearch_dsl import Q
 from invenio_access.permissions import any_user
 
 from invenio_records_permissions.generators import AnyUser, Disable

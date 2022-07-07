@@ -1,1 +1,1 @@
--e .[docs,tests,sqlite,elasticsearch7]
+-e .[docs,tests,sqlite,opensearch1]

@@ -9,7 +9,7 @@
 
 """Invenio Records Permissions API."""
 
-from elasticsearch_dsl.query import Q
+from invenio_search.engine import dsl
 
 
 def permission_filter(permission):
@@ -21,4 +21,4 @@ def permission_filter(permission):
             qf = qf | f if qf else f
         return qf
     else:
-        return Q()
+        return dsl.Q()

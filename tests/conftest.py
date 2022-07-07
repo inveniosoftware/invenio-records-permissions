@@ -92,7 +92,7 @@ def create_record():
 def create_real_record(create_record, location):
     """Factory pattern to create a real Record.
 
-    This is needed for tests relying on database and ES operations.
+    This is needed for tests relying on database and search engine operations.
     """
 
     def _create_real_record(metadata=None):

@@ -56,9 +56,6 @@ def test_disable():
     assert generator.needs() == []
     assert generator.excludes() == [any_user]
     assert generator.query_filter().to_dict() in [
-        # ES 6-
-        {"bool": {"must_not": [{"match_all": {}}]}},
-        # ES 7+
         {"match_none": {}},
     ]
 
@@ -142,7 +139,7 @@ def test_allowedbyaccesslevels_metadata_curator(action, create_record):
 
 
 def test_allowedbyaccesslevels_query_filter(mocker):
-    # TODO: Test query_filter on actual Elasticsearch instance per #23
+    # TODO: Test query_filter on the actual search engine instance per #23
 
     # User that has been allowed
     generator = AllowedByAccessLevel()
