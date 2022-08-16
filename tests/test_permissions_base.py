@@ -6,6 +6,7 @@
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
+from collections import namedtuple
 
 from invenio_access.permissions import any_user
 
@@ -67,3 +68,20 @@ def test_permission_policy_needs_excludes(superuser_role_need):
 
     assert foo_bar_perm.needs == {superuser_role_need, any_user}
     assert foo_bar_perm.excludes == set()
+
+
+def test_permission_policy_query_filters(superuser_identity):
+    class PermissionPolicy(BasePermissionPolicy):
+        can_read = []
+
+    # Any user
+    Identity = namedtuple("Identity", ["provides"])
+    any_user_identity = Identity(provides={any_user})
+    permission = PermissionPolicy(action="read", identity=any_user_identity)
+
+    assert [] == permission.query_filters
+
+    # Superuser
+    permission = PermissionPolicy(action="read", identity=superuser_identity)
+
+    assert [Q("match_all")] == permission.query_filters

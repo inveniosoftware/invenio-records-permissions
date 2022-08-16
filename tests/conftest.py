@@ -12,8 +12,13 @@
 See https://pytest-invenio.readthedocs.io/ for documentation on which test
 fixtures are available.
 """
+from copy import deepcopy
 
 import pytest
+from flask import g
+from flask_principal import Need
+from flask_security import login_user, logout_user
+from flask_security.utils import hash_password
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import superuser_access
 from invenio_accounts.models import Role
@@ -54,6 +59,29 @@ def superuser_role_need(db):
     db.session.commit()
 
     return action_role.need
+
+
+@pytest.fixture(scope="function")
+def superuser_identity(app, db, superuser_role_need):
+    """Superuser identity fixture."""
+    datastore = app.extensions["security"].datastore
+    user = datastore.create_user(
+        email="superuser@example.com",
+        password=hash_password("pa$$w0rD"),
+        active=True,
+    )
+
+    role = Role.query.filter_by(name="superuser-access").one()
+    allowance = ActionRoles.allow(superuser_access, role_id=role.id)
+    db.session.add(allowance)
+    db.session.commit()
+
+    assert login_user(user)
+    identity = deepcopy(g.identity)
+    logout_user()
+    identity.provides.add(Need(method="role", value="superuser-access"))
+
+    return identity
 
 
 @pytest.fixture(scope="session")

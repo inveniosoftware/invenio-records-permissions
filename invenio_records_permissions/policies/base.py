@@ -11,8 +11,9 @@
 
 from itertools import chain
 
-from flask import current_app
+from elasticsearch_dsl.query import Q
 from invenio_access import Permission
+from invenio_access.permissions import superuser_access
 
 from ..generators import Disable
 
@@ -118,4 +119,13 @@ class BasePermissionPolicy(Permission):
         user should be able to retrieve via search.
         """
         filters = [generator.query_filter(**self.over) for generator in self.generators]
+
+        # If identity has superuser access, add match_all to filters
+        superuser_permission = self._expand_action(superuser_access)
+        superuser_needs = superuser_permission.needs if superuser_permission else set()
+        identity = self.over.get("identity")
+        identity_provides = identity.provides if identity else set()
+        if superuser_needs & identity_provides:
+            filters.append(Q("match_all"))
+
         return [f for f in filters if f]
