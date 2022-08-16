@@ -6,10 +6,11 @@
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
-from collections import namedtuple
-
+from elasticsearch_dsl import Q
+from flask_principal import Identity
 from invenio_access.permissions import any_user
 
+from invenio_records_permissions.api import permission_filter
 from invenio_records_permissions.generators import AnyUser, Disable
 from invenio_records_permissions.policies import BasePermissionPolicy
 
@@ -29,6 +30,7 @@ class TestPermissionPolicy(BasePermissionPolicy):
     can_search = [AnyUser()]
     can_read = [AnyUser()]
     can_foo_bar = [AnyUser()]
+    can_baz = []
 
 
 def test_permission_policy_generators(app):
@@ -71,17 +73,38 @@ def test_permission_policy_needs_excludes(superuser_role_need):
 
 
 def test_permission_policy_query_filters(superuser_identity):
-    class PermissionPolicy(BasePermissionPolicy):
-        can_read = []
-
     # Any user
-    Identity = namedtuple("Identity", ["provides"])
-    any_user_identity = Identity(provides={any_user})
-    permission = PermissionPolicy(action="read", identity=any_user_identity)
+    any_user_identity = Identity(1)
+    any_user_identity.provides.add(any_user)
+    permission = TestPermissionPolicy(action="baz", identity=any_user_identity)
 
     assert [] == permission.query_filters
 
     # Superuser
-    permission = PermissionPolicy(action="read", identity=superuser_identity)
+    permission = TestPermissionPolicy(action="baz", identity=superuser_identity)
 
-    assert [Q("match_all")] == permission.query_filters
+    assert [Q()] == permission.query_filters
+
+
+def test_permission_filter(mocker):
+    """Placing test here in hope that permission_filter becomes part of Permission."""
+
+    # permission is None
+    permission = None
+    filter_ = permission_filter(permission)
+    assert Q() == filter_
+
+    # permission.query_filters returns []
+    permission = mocker.Mock(query_filters=[])
+    filter_ = permission_filter(permission)
+    assert Q() == filter_
+
+    # permission.query_filters returns [Q]
+    permission = mocker.Mock(query_filters=[Q("term", fieldA="valueA")])
+    filter_ = permission_filter(permission)
+    assert Q("term", fieldA="valueA") == filter_
+
+    # permission.query_filters returns [Q1, Q2]
+    permission = mocker.Mock(query_filters=[Q(), Q("term", fieldA="valueA")])
+    filter_ = permission_filter(permission)
+    assert Q() == filter_
