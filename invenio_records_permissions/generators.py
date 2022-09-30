@@ -15,6 +15,7 @@ from functools import reduce
 from itertools import chain
 
 from flask_principal import ActionNeed, UserNeed
+from invenio_access import ActionRoles, ActionUsers
 from invenio_access.permissions import (
     any_user,
     authenticated_user,
@@ -100,6 +101,29 @@ class SystemProcess(Generator):
             return dsl.Q("match_all")
         else:
             return []
+
+
+class SystemProcessWithoutAdmin(SystemProcess):
+    """Allows system processes but excluding super-user."""
+
+    def __init__(self):
+        """Constructor."""
+        super(SystemProcessWithoutAdmin, self).__init__()
+
+    @staticmethod
+    def fetch_super_user_need():
+        """Fetch super-user need."""
+        super_user_roles = (
+            ActionRoles.query_by_action(superuser_access).join(ActionRoles.role).all()
+        )
+        super_user_users = ActionUsers.query_by_action(superuser_access).all()
+        return [
+            superuser.need for superuser in chain(super_user_roles, super_user_users)
+        ]
+
+    def excludes(self, **kwargs):
+        """Preventing Needs."""
+        return self.fetch_super_user_need()
 
 
 class Disable(Generator):
