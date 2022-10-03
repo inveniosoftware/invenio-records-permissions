@@ -6,9 +6,9 @@
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
-from elasticsearch_dsl import Q
 from flask_principal import Identity
 from invenio_access.permissions import any_user
+from invenio_search.engine import dsl
 
 from invenio_records_permissions.api import permission_filter
 from invenio_records_permissions.generators import AnyUser, Disable
@@ -83,7 +83,7 @@ def test_permission_policy_query_filters(superuser_identity):
     # Superuser
     permission = TestPermissionPolicy(action="baz", identity=superuser_identity)
 
-    assert [Q()] == permission.query_filters
+    assert [dsl.Q()] == permission.query_filters
 
 
 def test_permission_filter(mocker):
@@ -92,19 +92,19 @@ def test_permission_filter(mocker):
     # permission is None
     permission = None
     filter_ = permission_filter(permission)
-    assert Q() == filter_
+    assert dsl.Q() == filter_
 
     # permission.query_filters returns []
     permission = mocker.Mock(query_filters=[])
     filter_ = permission_filter(permission)
-    assert Q() == filter_
+    assert dsl.Q() == filter_
 
     # permission.query_filters returns [Q]
-    permission = mocker.Mock(query_filters=[Q("term", fieldA="valueA")])
+    permission = mocker.Mock(query_filters=[dsl.Q("term", fieldA="valueA")])
     filter_ = permission_filter(permission)
-    assert Q("term", fieldA="valueA") == filter_
+    assert dsl.Q("term", fieldA="valueA") == filter_
 
     # permission.query_filters returns [Q1, Q2]
-    permission = mocker.Mock(query_filters=[Q(), Q("term", fieldA="valueA")])
+    permission = mocker.Mock(query_filters=[dsl.Q(), dsl.Q("term", fieldA="valueA")])
     filter_ = permission_filter(permission)
-    assert Q() == filter_
+    assert dsl.Q() == filter_

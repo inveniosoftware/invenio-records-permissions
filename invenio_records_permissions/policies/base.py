@@ -11,9 +11,9 @@
 
 from itertools import chain
 
-from elasticsearch_dsl.query import Q
 from invenio_access import Permission
 from invenio_access.permissions import superuser_access
+from invenio_search.engine import dsl
 
 from ..generators import Disable
 
@@ -126,6 +126,6 @@ class BasePermissionPolicy(Permission):
         identity = self.over.get("identity")
         identity_provides = identity.provides if identity else set()
         if superuser_needs & identity_provides:
-            filters.append(Q("match_all"))
+            filters.append(dsl.Q("match_all"))
 
         return [f for f in filters if f]
