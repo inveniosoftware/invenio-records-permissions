@@ -6,6 +6,7 @@
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
+
 from flask_principal import Identity
 from invenio_access.permissions import any_user
 from invenio_search.engine import dsl
@@ -45,7 +46,7 @@ def test_permission_policy_generators(app):
     assert isinstance(policy(action="random").generators[0], Disable)
 
 
-def test_permission_policy_needs_excludes(superuser_role_need):
+def test_permission_policy_needs_excludes(superusers_role_need):
     create_perm = TestPermissionPolicy(action="create")
     list_perm = TestPermissionPolicy(action="search")
     read_perm = TestPermissionPolicy(action="read")
@@ -53,22 +54,22 @@ def test_permission_policy_needs_excludes(superuser_role_need):
     delete_perm = TestPermissionPolicy(action="delete")
     foo_bar_perm = TestPermissionPolicy(action="foo_bar")
 
-    assert create_perm.needs == {superuser_role_need, any_user}
+    assert create_perm.needs == {superusers_role_need, any_user}
     assert create_perm.excludes == set()
 
-    assert list_perm.needs == {superuser_role_need, any_user}
+    assert list_perm.needs == {superusers_role_need, any_user}
     assert list_perm.excludes == set()
 
-    assert read_perm.needs == {superuser_role_need, any_user}
+    assert read_perm.needs == {superusers_role_need, any_user}
     assert read_perm.excludes == set()
 
-    assert update_perm.needs == {superuser_role_need}
+    assert update_perm.needs == {superusers_role_need}
     assert update_perm.excludes == set()
 
-    assert delete_perm.needs == {superuser_role_need}
+    assert delete_perm.needs == {superusers_role_need}
     assert delete_perm.excludes == set()
 
-    assert foo_bar_perm.needs == {superuser_role_need, any_user}
+    assert foo_bar_perm.needs == {superusers_role_need, any_user}
     assert foo_bar_perm.excludes == set()
 
 

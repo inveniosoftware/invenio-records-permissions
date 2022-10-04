@@ -12,13 +12,9 @@
 See https://pytest-invenio.readthedocs.io/ for documentation on which test
 fixtures are available.
 """
-from copy import deepcopy
 
 import pytest
-from flask import g
-from flask_principal import Need
-from flask_security import login_user, logout_user
-from flask_security.utils import hash_password
+from flask_principal import RoleNeed
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import superuser_access
 from invenio_accounts.models import Role
@@ -42,46 +38,34 @@ def create_app():
 
 
 @pytest.fixture(scope="function")
-def superuser_role_need(db):
-    """Store 1 role with 'superuser-access' ActionNeed.
-
-    WHY: This is needed because expansion of ActionNeed is
-         done on the basis of a User/Role being associated with that Need.
-         If no User/Role is associated with that Need (in the DB), the
-         permission is expanded to an empty list.
-    """
-    role = Role(name="superuser-access")
-    db.session.add(role)
-
-    action_role = ActionRoles.create(action=superuser_access, role=role)
-    db.session.add(action_role)
-
+def superusers_role(db):
+    """Grant `superuser_access` action to the new role."""
+    superusers = Role(name="superusers")
+    db.session.add(superusers)
+    db.session.add(ActionRoles.allow(superuser_access, role=superusers))
     db.session.commit()
-
-    return action_role.need
+    return superusers
 
 
 @pytest.fixture(scope="function")
-def superuser_identity(app, db, superuser_role_need):
-    """Superuser identity fixture."""
-    datastore = app.extensions["security"].datastore
-    user = datastore.create_user(
-        email="superuser@example.com",
-        password=hash_password("pa$$w0rD"),
-        active=True,
-    )
+def superusers_role_need(superusers_role):
+    """Superuser role fixture."""
+    return RoleNeed(superusers_role.name)
 
-    role = Role.query.filter_by(name="superuser-access").one()
-    allowance = ActionRoles.allow(superuser_access, role_id=role.id)
-    db.session.add(allowance)
+
+@pytest.fixture(scope="function")
+def superuser_identity(app, db, UserFixture, superusers_role):
+    """Superuser identity fixture."""
+    user = UserFixture(
+        email="superuser@inveniosoftware.org",
+        password="superuser",
+    )
+    user.create(app, db)
+    datastore = app.extensions["security"].datastore
+    datastore.add_role_to_user(user.user, superusers_role)
     db.session.commit()
 
-    assert login_user(user)
-    identity = deepcopy(g.identity)
-    logout_user()
-    identity.provides.add(Need(method="role", value="superuser-access"))
-
-    return identity
+    return user.identity
 
 
 @pytest.fixture(scope="session")

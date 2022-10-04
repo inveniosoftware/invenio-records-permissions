@@ -111,6 +111,20 @@ class BasePermissionPolicy(Permission):
         self._load_permissions()  # self.explicit_excludes is used here
         return self._permissions.excludes
 
+    def _query_filters_superuser(self, filters):
+        """Allow superuser identity to retrieve all results."""
+        identity = self.over.get("identity")
+        identity_provides = identity.provides if identity else set()
+        # expand action to resolve needs
+        expanded = self._expand_action(superuser_access)
+        superuser_needs = expanded.needs if expanded else set()
+
+        is_superuser = superuser_needs & identity_provides
+        if is_superuser:
+            filters.append(dsl.Q("match_all"))
+
+        return filters
+
     @property
     def query_filters(self):
         """List of search engine query filters.
@@ -119,13 +133,5 @@ class BasePermissionPolicy(Permission):
         user should be able to retrieve via search.
         """
         filters = [generator.query_filter(**self.over) for generator in self.generators]
-
-        # If identity has superuser access, add match_all to filters
-        superuser_permission = self._expand_action(superuser_access)
-        superuser_needs = superuser_permission.needs if superuser_permission else set()
-        identity = self.over.get("identity")
-        identity_provides = identity.provides if identity else set()
-        if superuser_needs & identity_provides:
-            filters.append(dsl.Q("match_all"))
-
+        filters = self._query_filters_superuser(filters)
         return [f for f in filters if f]

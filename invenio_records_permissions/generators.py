@@ -9,7 +9,6 @@
 
 """Invenio Records Permissions Generators."""
 
-import json
 import operator
 from functools import reduce
 from itertools import chain
@@ -22,7 +21,6 @@ from invenio_access.permissions import (
     superuser_access,
     system_process,
 )
-from invenio_records.api import Record
 from invenio_search.engine import dsl
 
 
@@ -63,25 +61,6 @@ class AnyUser(Generator):
         """Match all in search."""
         # TODO: Implement with new permissions metadata
         return dsl.Q("match_all")
-
-
-class SuperUser(Generator):
-    """Allows super users."""
-
-    def __init__(self):
-        """Constructor."""
-        super(SuperUser, self).__init__()
-
-    def needs(self, **kwargs):
-        """Enabling Needs."""
-        return [superuser_access]
-
-    def query_filter(self, identity=None, **kwargs):
-        """Filters for current identity as super user."""
-        if superuser_access in identity.provides:
-            return dsl.Q("match_all")
-        else:
-            return []
 
 
 class SystemProcess(Generator):
