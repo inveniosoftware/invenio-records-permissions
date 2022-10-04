@@ -18,8 +18,8 @@ history = open('CHANGES.rst').read()
 
 tests_require = [
     'pytest-mock>=1.6.0',
-    'pytest-invenio>=1.4.1',
-    'invenio-accounts>=1.4.3',
+    'pytest-invenio>=1.4.13,<2.0.0',
+    'invenio-accounts>=2.0.0',
     'invenio-app>=1.3.0',
 ]
 

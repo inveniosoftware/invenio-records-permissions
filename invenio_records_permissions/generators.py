@@ -9,7 +9,6 @@
 
 """Invenio Records Permissions Generators."""
 
-import json
 import operator
 from functools import reduce
 from itertools import chain
@@ -18,7 +17,6 @@ from elasticsearch_dsl.query import Q
 from flask_principal import ActionNeed, UserNeed
 from invenio_access.permissions import any_user, authenticated_user, \
     superuser_access, system_process
-from invenio_records.api import Record
 
 
 class Generator(object):
