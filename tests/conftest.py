@@ -38,23 +38,23 @@ def create_app():
 
 
 @pytest.fixture(scope="function")
-def superusers_role(db):
+def role_w_superuser_access(db):
     """Grant `superuser_access` action to the new role."""
-    superusers = Role(name="superusers")
-    db.session.add(superusers)
-    db.session.add(ActionRoles.allow(superuser_access, role=superusers))
+    role = Role(name="role-superuser-access")
+    db.session.add(role)
+    db.session.add(ActionRoles.allow(superuser_access, role=role))
     db.session.commit()
-    return superusers
+    return role
 
 
 @pytest.fixture(scope="function")
-def superusers_role_need(superusers_role):
+def role_w_superuser_access_need(role_w_superuser_access):
     """Superuser role fixture."""
-    return RoleNeed(superusers_role.name)
+    return RoleNeed(role_w_superuser_access.name)
 
 
 @pytest.fixture(scope="function")
-def superuser_identity(app, db, UserFixture, superusers_role):
+def superuser_identity(app, db, UserFixture, role_w_superuser_access):
     """Superuser identity fixture."""
     user = UserFixture(
         email="superuser@inveniosoftware.org",
@@ -62,7 +62,7 @@ def superuser_identity(app, db, UserFixture, superusers_role):
     )
     user.create(app, db)
     datastore = app.extensions["security"].datastore
-    datastore.add_role_to_user(user.user, superusers_role)
+    datastore.add_role_to_user(user.user, role_w_superuser_access)
     db.session.commit()
 
     return user.identity

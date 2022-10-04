@@ -46,7 +46,7 @@ def test_permission_policy_generators(app):
     assert isinstance(policy(action="random").generators[0], Disable)
 
 
-def test_permission_policy_needs_excludes(superusers_role_need):
+def test_permission_policy_needs_excludes(role_w_superuser_access_need):
     create_perm = TestPermissionPolicy(action="create")
     list_perm = TestPermissionPolicy(action="search")
     read_perm = TestPermissionPolicy(action="read")
@@ -54,22 +54,22 @@ def test_permission_policy_needs_excludes(superusers_role_need):
     delete_perm = TestPermissionPolicy(action="delete")
     foo_bar_perm = TestPermissionPolicy(action="foo_bar")
 
-    assert create_perm.needs == {superusers_role_need, any_user}
+    assert create_perm.needs == {role_w_superuser_access_need, any_user}
     assert create_perm.excludes == set()
 
-    assert list_perm.needs == {superusers_role_need, any_user}
+    assert list_perm.needs == {role_w_superuser_access_need, any_user}
     assert list_perm.excludes == set()
 
-    assert read_perm.needs == {superusers_role_need, any_user}
+    assert read_perm.needs == {role_w_superuser_access_need, any_user}
     assert read_perm.excludes == set()
 
-    assert update_perm.needs == {superusers_role_need}
+    assert update_perm.needs == {role_w_superuser_access_need}
     assert update_perm.excludes == set()
 
-    assert delete_perm.needs == {superusers_role_need}
+    assert delete_perm.needs == {role_w_superuser_access_need}
     assert delete_perm.excludes == set()
 
-    assert foo_bar_perm.needs == {superusers_role_need, any_user}
+    assert foo_bar_perm.needs == {role_w_superuser_access_need, any_user}
     assert foo_bar_perm.excludes == set()
 
 
@@ -78,12 +78,9 @@ def test_permission_policy_query_filters(superuser_identity):
     any_user_identity = Identity(1)
     any_user_identity.provides.add(any_user)
     permission = TestPermissionPolicy(action="baz", identity=any_user_identity)
-
     assert [] == permission.query_filters
 
-    # Superuser
     permission = TestPermissionPolicy(action="baz", identity=superuser_identity)
-
     assert [dsl.Q()] == permission.query_filters
 
 
