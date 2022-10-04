@@ -8,8 +8,10 @@
 # more details.
 
 from elasticsearch_dsl import Q
+from flask_principal import Identity
 from invenio_access.permissions import any_user
 
+from invenio_records_permissions.api import permission_filter
 from invenio_records_permissions.generators import AnyUser, Disable
 from invenio_records_permissions.policies import BasePermissionPolicy
 
@@ -29,6 +31,7 @@ class TestPermissionPolicy(BasePermissionPolicy):
     can_search = [AnyUser()]
     can_read = [AnyUser()]
     can_foo_bar = [AnyUser()]
+    can_baz = []
 
 
 def test_permission_policy_generators(app):
@@ -43,7 +46,7 @@ def test_permission_policy_generators(app):
     assert isinstance(policy(action='random').generators[0], Disable)
 
 
-def test_permission_policy_needs_excludes(superuser_role_need):
+def test_permission_policy_needs_excludes(role_w_superuser_access_need):
     create_perm = TestPermissionPolicy(action='create')
     list_perm = TestPermissionPolicy(action='search')
     read_perm = TestPermissionPolicy(action='read')
@@ -51,20 +54,58 @@ def test_permission_policy_needs_excludes(superuser_role_need):
     delete_perm = TestPermissionPolicy(action='delete')
     foo_bar_perm = TestPermissionPolicy(action='foo_bar')
 
-    assert create_perm.needs == {superuser_role_need, any_user}
+    assert create_perm.needs == {role_w_superuser_access_need, any_user}
     assert create_perm.excludes == set()
 
-    assert list_perm.needs == {superuser_role_need, any_user}
+    assert list_perm.needs == {role_w_superuser_access_need, any_user}
     assert list_perm.excludes == set()
 
-    assert read_perm.needs == {superuser_role_need, any_user}
+    assert read_perm.needs == {role_w_superuser_access_need, any_user}
     assert read_perm.excludes == set()
 
-    assert update_perm.needs == {superuser_role_need}
+    assert update_perm.needs == {role_w_superuser_access_need}
     assert update_perm.excludes == set()
 
-    assert delete_perm.needs == {superuser_role_need}
+    assert delete_perm.needs == {role_w_superuser_access_need}
     assert delete_perm.excludes == set()
 
-    assert foo_bar_perm.needs == {superuser_role_need, any_user}
+    assert foo_bar_perm.needs == {role_w_superuser_access_need, any_user}
     assert foo_bar_perm.excludes == set()
+
+
+def test_permission_policy_query_filters(superuser_identity):
+    # Any user
+    any_user_identity = Identity(1)
+    any_user_identity.provides.add(any_user)
+    perm = TestPermissionPolicy(action="baz", identity=any_user_identity)
+
+    assert [] == perm.query_filters
+
+    # Superuser
+    perm = TestPermissionPolicy(action="baz", identity=superuser_identity)
+
+    assert [Q()] == perm.query_filters
+
+
+def test_permission_filter(mocker):
+    """Test permission_filter func."""
+
+    # permission is None
+    permission = None
+    filter_ = permission_filter(permission)
+    assert Q() == filter_
+
+    # permission.query_filters returns []
+    permission = mocker.Mock(query_filters=[])
+    filter_ = permission_filter(permission)
+    assert Q() == filter_
+
+    # permission.query_filters returns [Q]
+    permission = mocker.Mock(query_filters=[Q("term", fieldA="valueA")])
+    filter_ = permission_filter(permission)
+    assert Q("term", fieldA="valueA") == filter_
+
+    # permission.query_filters returns [Q1, Q2]
+    permission = mocker.Mock(query_filters=[Q(), Q("term", fieldA="valueA")])
+    filter_ = permission_filter(permission)
+    assert Q() == filter_

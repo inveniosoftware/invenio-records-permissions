@@ -9,16 +9,16 @@
 
 """Invenio Records Permissions API."""
 
+from functools import reduce
+
 from elasticsearch_dsl.query import Q
 
 
 def permission_filter(permission):
-    """Permission filter."""
-    # NOTE: flask-principal overwrites __bool() and access g
-    if permission is not None:
-        qf = None
-        for f in permission.query_filters:
-            qf = qf | f if qf else f
-        return qf
-    else:
-        return Q()
+    """Generates the Query that returns visible records from a search.
+
+    Q() is the "match all" Query.
+    """
+    query_filters = permission.query_filters if permission is not None else []
+    query_filters = query_filters or [Q()]
+    return reduce(lambda f1, f2: f1 | f2, query_filters)

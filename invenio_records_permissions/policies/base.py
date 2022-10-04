@@ -11,8 +11,9 @@
 
 from itertools import chain
 
-from flask import current_app
+from elasticsearch_dsl.query import Q
 from invenio_access import Permission
+from invenio_access.permissions import superuser_access
 
 from ..generators import Disable
 
@@ -114,6 +115,20 @@ class BasePermissionPolicy(Permission):
         self._load_permissions()  # self.explicit_excludes is used here
         return self._permissions.excludes
 
+    def _query_filters_superuser(self, filters):
+        """Allow superuser identity to retrieve all results."""
+        identity = self.over.get("identity")
+        identity_provides = identity.provides if identity else set()
+        # expand action to resolve needs
+        expanded = self._expand_action(superuser_access)
+        superuser_needs = expanded.needs if expanded else set()
+
+        is_superuser = superuser_needs & identity_provides
+        if is_superuser:
+            filters.append(Q("match_all"))
+
+        return filters
+
     @property
     def query_filters(self):
         """List of ElasticSearch query filters.
@@ -125,4 +140,5 @@ class BasePermissionPolicy(Permission):
             generator.query_filter(**self.over)
             for generator in self.generators
         ]
+        filters = self._query_filters_superuser(filters)
         return [f for f in filters if f]
