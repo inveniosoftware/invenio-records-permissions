@@ -11,27 +11,27 @@ from invenio_access.permissions import any_user, system_process
 from invenio_records_permissions import RecordPermissionPolicy
 
 
-def test_delete_record_policy(superusers_role_need):
+def test_delete_record_policy(role_w_superuser_access_need):
     """Test delete record policy."""
     delete_perm = RecordPermissionPolicy(action="delete")
 
     # only superuser can delete
-    assert delete_perm.needs == {superusers_role_need}
+    assert delete_perm.needs == {role_w_superuser_access_need}
     assert delete_perm.excludes == set()
 
 
-def test_create_record_policy(superusers_role_need):
+def test_create_record_policy(role_w_superuser_access_need):
     """Test create record policy."""
     create_perm = RecordPermissionPolicy(action="create")
 
     # superuser role added by base policy
-    assert create_perm.needs == {superusers_role_need}
+    assert create_perm.needs == {role_w_superuser_access_need}
     # exclude everyone - the records should be created via deposits,
     # so no one should be able to create the record directly
     assert create_perm.excludes == {any_user}
 
 
-def test_update_record_policy(create_record, superusers_role_need):
+def test_update_record_policy(create_record, role_w_superuser_access_need):
     """Test create record policy."""
     record = create_record()
     update_perm = RecordPermissionPolicy(action="update", record=record)
@@ -41,7 +41,7 @@ def test_update_record_policy(create_record, superusers_role_need):
         UserNeed(1),
         UserNeed(2),
         UserNeed(3),
-        superusers_role_need,
+        role_w_superuser_access_need,
     }
     assert update_perm.excludes == set()
 
@@ -66,7 +66,7 @@ def test_read_files_policy(create_record):
     assert read_perm.excludes == set()
 
 
-def test_update_files_policy(create_record, superusers_role_need):
+def test_update_files_policy(create_record, role_w_superuser_access_need):
     """Test update record files policy."""
     record = create_record()
     read_perm = RecordPermissionPolicy(action="update_files", record=record)
@@ -76,6 +76,6 @@ def test_update_files_policy(create_record, superusers_role_need):
         UserNeed(1),
         UserNeed(2),
         UserNeed(3),
-        superusers_role_need,
+        role_w_superuser_access_need,
     }
     assert read_perm.excludes == set()

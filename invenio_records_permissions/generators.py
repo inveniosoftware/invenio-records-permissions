@@ -74,7 +74,7 @@ class SystemProcess(Generator):
             return []
 
 
-class SystemProcessWithoutAdmin(SystemProcess):
+class SystemProcessWithoutSuperUser(SystemProcess):
     """Allows system_process role, excluding superuser-access needs."""
 
     @staticmethod
@@ -161,7 +161,7 @@ class AllowedByAccessLevel(Generator):
     # 'metadata_reader'
     # 'files_reader'
     # 'files_curator'
-    # 'admin'
+    # 'superuser'
     ACTION_TO_ACCESS_LEVELS = {
         "create": [],
         "read": ["metadata_curator"],

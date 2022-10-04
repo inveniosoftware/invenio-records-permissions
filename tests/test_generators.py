@@ -22,7 +22,7 @@ from invenio_records_permissions.generators import (
     Generator,
     RecordOwners,
     SystemProcess,
-    SystemProcessWithoutAdmin,
+    SystemProcessWithoutSuperUser,
 )
 
 
@@ -76,11 +76,11 @@ def test_system_process(mocker):
     _test_system_process_query_filter(generator, mocker)
 
 
-def test_system_process_without_admin(mocker, superusers_role_need):
-    generator = SystemProcessWithoutAdmin()
+def test_system_process_without_superuser(mocker, role_w_superuser_access_need):
+    generator = SystemProcessWithoutSuperUser()
 
     assert generator.needs() == [system_process]
-    assert generator.excludes() == [superusers_role_need]
+    assert generator.excludes() == [role_w_superuser_access_need]
     _test_system_process_query_filter(generator, mocker)
 
 

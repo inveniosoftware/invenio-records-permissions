@@ -113,8 +113,7 @@ Here is an example of a custom record Policy:
 
 .. code-block:: python
 
-    from invenio_records_permissions.generators import AnyUser, RecordOwners, \
-        SuperUser
+    from invenio_records_permissions.generators import AnyUser, RecordOwners
     from invenio_records_permissions.policies.base import BasePermissionPolicy
 
     class ExampleRecordPermissionPolicy(BasePermissionPolicy):
@@ -122,7 +121,6 @@ Here is an example of a custom record Policy:
         can_search = [AnyUser()]
         can_read = [AnyUser()]
         can_update = [RecordOwners()]
-        can_foo_bar = [SuperUser()]
 
 The actions are class variables of the form: ``can_<action>`` and the
 corresponding (dis-)allowed identities are a list of Generator instances.
