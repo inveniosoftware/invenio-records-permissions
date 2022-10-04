@@ -42,12 +42,16 @@ def test_any_user():
     assert generator.query_filter().to_dict() == {"match_all": {}}
 
 
-def test_superuser():
+def test_superuser(superuser_identity):
     generator = SuperUser()
 
     assert generator.needs() == [superuser_access]
     assert generator.excludes() == []
-    # TODO: Test query_filter when new permissions metadata implemented
+    breakpoint()
+    assert generator.query_filter(identity=superuser_identity).to_dict() == {
+        "match_all": {}
+    }
+    assert generator.query_filter() == []
 
 
 def test_disable():

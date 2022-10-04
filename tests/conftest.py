@@ -17,6 +17,7 @@ import pytest
 from invenio_access.models import ActionRoles
 from invenio_access.permissions import superuser_access
 from invenio_accounts.models import Role
+from invenio_admin.permissions import action_admin_access
 from invenio_app.factory import create_app as _create_app
 from invenio_records.api import Record
 
@@ -54,6 +55,50 @@ def superuser_role_need(db):
     db.session.commit()
 
     return action_role.need
+
+
+@pytest.fixture(scope="function")
+def admin_role_need(db):
+    """Store 1 role with 'superuser-access' ActionNeed.
+    WHY: This is needed because expansion of ActionNeed is
+         done on the basis of a User/Role being associated with that Need.
+         If no User/Role is associated with that Need (in the DB), the
+         permission is expanded to an empty list.
+    """
+    role = Role(name="admin-access")
+    db.session.add(role)
+
+    action_role = ActionRoles.create(action=action_admin_access, role=role)
+    db.session.add(action_role)
+
+    db.session.commit()
+
+    return action_role.need
+
+
+@pytest.fixture()
+def admin(UserFixture, app, db, admin_role_need):
+    """Admin user for requests."""
+    u = UserFixture(
+        email="admin@inveniosoftware.org",
+        password="admin",
+    )
+    u.create(app, db)
+
+    datastore = app.extensions["security"].datastore
+    _, role = datastore._prepare_role_modify_args(u.user, "admin-access")
+
+    datastore.add_role_to_user(u.user, role)
+    db.session.commit()
+    return u
+
+
+@pytest.fixture(scope="function")
+def superuser_identity(admin, superuser_role_need):
+    """Superuser identity fixture."""
+    identity = admin.identity
+    identity.provides.add(superuser_role_need)
+    return identity
 
 
 @pytest.fixture(scope="session")
