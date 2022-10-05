@@ -70,7 +70,7 @@ class RecordPermissionPolicy(BasePermissionPolicy):
         """Constructor."""
         self.original_action = action
         action = RecordPermissionPolicy.NEED_LABEL_TO_ACTION.get(action, action)
-        super(RecordPermissionPolicy, self).__init__(action, **over)
+        super().__init__(action, **over)
 
 
 def get_record_permission_policy():

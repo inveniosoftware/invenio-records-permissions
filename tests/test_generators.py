@@ -10,8 +10,8 @@
 import copy
 
 import pytest
-from flask_principal import ActionNeed, UserNeed
-from invenio_access.permissions import any_user, authenticated_user
+from flask_principal import ActionNeed, Need, UserNeed
+from invenio_access.permissions import any_user, authenticated_user, system_process
 
 from invenio_records_permissions.generators import (
     Admin,
@@ -22,6 +22,8 @@ from invenio_records_permissions.generators import (
     Disable,
     Generator,
     RecordOwners,
+    SystemProcess,
+    SystemProcessWithoutAdmin,
 )
 
 
@@ -51,6 +53,38 @@ def test_disable():
     ]
 
 
+def _test_system_process_query_filter(generator, mocker):
+    # Anonymous identity.
+    assert not generator.query_filter(identity=mocker.Mock(provides=[]))
+
+    # Authenticated user identity
+    assert not generator.query_filter(
+        identity=mocker.Mock(provides=[Need(method="id", value=1)])
+    )
+
+    # System process identity
+    query_filter = generator.query_filter(
+        identity=mocker.Mock(provides=[system_process])
+    )
+    assert query_filter.to_dict() == {"match_all": {}}
+
+
+def test_system_process(mocker):
+    generator = SystemProcess()
+
+    assert generator.needs() == [system_process]
+    assert generator.excludes() == []
+    _test_system_process_query_filter(generator, mocker)
+
+
+def test_system_process_without_admin(mocker, superusers_role_need):
+    generator = SystemProcessWithoutAdmin()
+
+    assert generator.needs() == [system_process]
+    assert generator.excludes() == [superusers_role_need]
+    _test_system_process_query_filter(generator, mocker)
+
+
 def test_admin():
     generator = Admin()
 
@@ -71,9 +105,8 @@ def test_record_owner(create_record, mocker):
 
     # Authenticated identity
     query_filter = generator.query_filter(
-        identity=mocker.Mock(provides=[mocker.Mock(method="id", value=1)])
+        identity=mocker.Mock(provides=[Need(method="id", value=1)])
     )
-
     assert query_filter.to_dict() == {"term": {"owners": 1}}
 
 
