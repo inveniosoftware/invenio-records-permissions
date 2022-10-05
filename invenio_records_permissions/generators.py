@@ -49,10 +49,6 @@ class Generator(object):
 class AnyUser(Generator):
     """Allows any user."""
 
-    def __init__(self):
-        """Constructor."""
-        super(AnyUser, self).__init__()
-
     def needs(self, **kwargs):
         """Enabling Needs."""
         return [any_user]
@@ -64,11 +60,7 @@ class AnyUser(Generator):
 
 
 class SystemProcess(Generator):
-    """Allows system processes."""
-
-    def __init__(self):
-        """Constructor."""
-        super(SystemProcess, self).__init__()
+    """Allows system_process role."""
 
     def needs(self, **kwargs):
         """Enabling Needs."""
@@ -83,34 +75,24 @@ class SystemProcess(Generator):
 
 
 class SystemProcessWithoutAdmin(SystemProcess):
-    """Allows system processes but excluding super-user."""
-
-    def __init__(self):
-        """Constructor."""
-        super(SystemProcessWithoutAdmin, self).__init__()
+    """Allows system_process role, excluding superuser-access needs."""
 
     @staticmethod
-    def fetch_super_user_need():
-        """Fetch super-user need."""
-        super_user_roles = (
+    def _expand_superuser_access_action():
+        """Fetch users and roles allowed for the superuser-access action."""
+        roles = (
             ActionRoles.query_by_action(superuser_access).join(ActionRoles.role).all()
         )
-        super_user_users = ActionUsers.query_by_action(superuser_access).all()
-        return [
-            superuser.need for superuser in chain(super_user_roles, super_user_users)
-        ]
+        users = ActionUsers.query_by_action(superuser_access).all()
+        return chain(roles, users)
 
     def excludes(self, **kwargs):
         """Preventing Needs."""
-        return self.fetch_super_user_need()
+        return [role.need for role in self._expand_superuser_access_action()]
 
 
 class Disable(Generator):
-    """Denies ALL users including super users."""
-
-    def __init__(self):
-        """Constructor."""
-        super(Disable, self).__init__()
+    """Denies ALL users including users and roles allowed to superuser-access action."""
 
     def excludes(self, **kwargs):
         """Preventing Needs."""
@@ -123,10 +105,6 @@ class Disable(Generator):
 
 class Admin(Generator):
     """Allows users with admin-access (different from superuser-access)."""
-
-    def __init__(self):
-        """Constructor."""
-        super(Admin, self).__init__()
 
     def needs(self, **kwargs):
         """Enabling Needs."""
@@ -173,10 +151,6 @@ class AnyUserIfPublic(Generator):
 
 class AuthenticatedUser(Generator):
     """Allows authenticated users."""
-
-    def __init__(self):
-        """Constructor."""
-        super(AuthenticatedUser, self).__init__()
 
     def needs(self, **kwargs):
         """Enabling Needs."""

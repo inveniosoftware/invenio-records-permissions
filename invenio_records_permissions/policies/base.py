@@ -56,7 +56,7 @@ class BasePermissionPolicy(Permission):
 
     def __init__(self, action, **over):
         """Constructor."""
-        super(BasePermissionPolicy, self).__init__()
+        super().__init__()
         self.action = action
         self.over = over
 
