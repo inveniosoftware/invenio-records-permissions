@@ -14,7 +14,6 @@ from flask_principal import ActionNeed, Need, UserNeed
 from invenio_access.permissions import any_user, authenticated_user, system_process
 
 from invenio_records_permissions.generators import (
-    Admin,
     AllowedByAccessLevel,
     AnyUser,
     AnyUserIfPublic,
@@ -83,14 +82,6 @@ def test_system_process_without_admin(mocker, superusers_role_need):
     assert generator.needs() == [system_process]
     assert generator.excludes() == [superusers_role_need]
     _test_system_process_query_filter(generator, mocker)
-
-
-def test_admin():
-    generator = Admin()
-
-    assert generator.needs() == [ActionNeed("admin-access")]
-    assert generator.excludes() == []
-    assert generator.query_filter() == []
 
 
 def test_record_owner(create_record, mocker):
