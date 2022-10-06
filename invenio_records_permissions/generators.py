@@ -103,14 +103,6 @@ class Disable(Generator):
         return ~dsl.Q("match_all")
 
 
-class Admin(Generator):
-    """Allows users with admin-access (different from superuser-access)."""
-
-    def needs(self, **kwargs):
-        """Enabling Needs."""
-        return [ActionNeed("admin-access")]
-
-
 class RecordOwners(Generator):
     """Allows record owners."""
 
