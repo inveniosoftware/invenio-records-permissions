@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2019-2023 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
+# Copyright (C) 2022-2024 TU Wien.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -23,6 +24,7 @@ from invenio_access.permissions import (
     superuser_access,
     system_process,
 )
+from invenio_base.utils import obj_or_import_string
 from invenio_search.engine import dsl
 
 
@@ -321,6 +323,22 @@ class IfConfig(ConditionalGenerator):
     def _condition(self, **_):
         """Check if the config value is truthy."""
         return current_app.config.get(self.config_key) in self.accept_values
+
+
+class DisableIfReadOnly(IfConfig):
+    """Disable action for ALL users if the system is in read-only mode.
+
+    This generator uses the ``RECORDS_PERMISSIONS_READ_ONLY`` configuration item
+    to determine if the read-only mode is set.
+    """
+
+    def __init__(self):
+        """Initialize generator."""
+        super().__init__(
+            config_key="RECORDS_PERMISSIONS_READ_ONLY",
+            then_=[Disable()],
+            else_=[],
+        )
 
 
 #

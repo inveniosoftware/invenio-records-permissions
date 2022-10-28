@@ -14,7 +14,13 @@ from flask import current_app
 from werkzeug.utils import import_string
 
 from ..errors import UnknownGeneratorError
-from ..generators import AnyUser, AnyUserIfPublic, Disable, RecordOwners
+from ..generators import (
+    AnyUser,
+    AnyUserIfPublic,
+    Disable,
+    DisableIfReadOnly,
+    RecordOwners,
+)
 from .base import BasePermissionPolicy
 
 
@@ -59,13 +65,13 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     # Read access given to everyone if public record/files and owners always.
     can_read = [AnyUserIfPublic(), RecordOwners()]
     # Update access given to record owners.
-    can_update = [RecordOwners()]
+    can_update = [RecordOwners(), DisableIfReadOnly()]
     # Delete access given to superuser-access action only
     # (superuser-access is added by default by base policy)
     can_delete = []
     # Associated files permissions (which are really bucket permissions)
     can_read_files = [AnyUserIfPublic(), RecordOwners()]
-    can_update_files = [RecordOwners()]
+    can_update_files = [RecordOwners(), DisableIfReadOnly()]
     can_read_deleted_files = []
 
     def __init__(self, action, **over):
