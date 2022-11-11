@@ -2,7 +2,8 @@
 #
 # Copyright (C) 2019 CERN.
 # Copyright (C) 2019 Northwestern University.
-# Copyright (C) 2023 Graz University of Technology
+# Copyright (C) 2023 Graz University of Technology.
+# Copyright (C) 2024 TU Wien.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -22,6 +23,7 @@ from invenio_records_permissions.generators import (
     AuthenticatedUser,
     ConditionalGenerator,
     Disable,
+    DisableIfReadOnly,
     Generator,
     IfConfig,
     RecordOwners,
@@ -266,3 +268,18 @@ def test_ifconfig(app, create_record):
         UserNeed(2),
         UserNeed(3),
     }
+
+
+def test_disable_if_read_only(app):
+    generator = DisableIfReadOnly()
+
+    # Normal operation
+    app.config["RECORDS_PERMISSIONS_READ_ONLY"] = False
+    assert generator.excludes(record=None) == set()
+    assert generator.query_filter(record=None) == []
+
+    # System is in read-only mode
+    app.config["RECORDS_PERMISSIONS_READ_ONLY"] = True
+    assert generator.excludes(record=None) == {any_user}
+    query_filter = generator.query_filter(record=None)
+    assert query_filter.to_dict() == {"match_none": {}}
