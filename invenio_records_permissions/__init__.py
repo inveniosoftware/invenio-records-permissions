@@ -153,7 +153,7 @@ The succinct encoding of the permissions for your instance gives you
 from .ext import InvenioRecordsPermissions
 from .policies import BasePermissionPolicy, RecordPermissionPolicy
 
-__version__ = "0.16.0"
+__version__ = "0.17.0"
 
 __all__ = (
     "__version__",
