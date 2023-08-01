@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2023 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
@@ -228,6 +228,30 @@ class AllowedByAccessLevel(Generator):
         ]
 
         return reduce(operator.or_, queries)
+
+
+class AdminAction(Generator):
+    """Generator for admin needs.
+
+    This generator's purpose is to be used in cases where administration needs are required.
+    The query filter of this generator is quite broad (match_all). Therefore, it must be used with care.
+    """
+
+    def __init__(self, action):
+        """Constructor."""
+        self.action = action
+        super().__init__()
+
+    def needs(self, **kwargs):
+        """Enabling Needs."""
+        return [self.action]
+
+    def query_filter(self, identity, **kwargs):
+        """Not implemented at this level."""
+        for need in identity.provides:
+            if need.value == self.action.value:
+                return dsl.Q("match_all")
+        return []
 
 
 #
