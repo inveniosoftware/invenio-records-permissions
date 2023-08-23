@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2019 CERN.
 # Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2023 Graz University of Technology
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -12,14 +13,17 @@ import copy
 import pytest
 from flask_principal import ActionNeed, Need, UserNeed
 from invenio_access.permissions import any_user, authenticated_user, system_process
+from invenio_search.engine import dsl
 
 from invenio_records_permissions.generators import (
     AllowedByAccessLevel,
     AnyUser,
     AnyUserIfPublic,
     AuthenticatedUser,
+    ConditionalGenerator,
     Disable,
     Generator,
+    IfConfig,
     RecordOwners,
     SystemProcess,
     SystemProcessWithoutSuperUser,
@@ -176,3 +180,89 @@ def test_allowedbyaccesslevels_query_filter(mocker):
     )
 
     assert query_filter == []
+
+
+def test_conditional(create_record, mocker):
+    """Test ConditionalGenerator."""
+
+    class ConditionalAccessGenerator(ConditionalGenerator):
+        def __init__(self, then_, else_, value):
+            """Constructor."""
+            self.then_ = then_
+            self.else_ = else_
+            self._value = value
+
+        def _condition(self, record=None, **kwargs):
+            """Condition to choose generators set."""
+            return record and record.get("access_right") == self._value
+
+    public_record = create_record({"access_right": "open"})
+    restricted_record = create_record({"access_right": "restricted"})
+    system_record = create_record({"access_right": "system"})
+
+    public_generator = ConditionalAccessGenerator(
+        then_=[AnyUser()], else_=[RecordOwners()], value="open"
+    )
+    nested_generator = ConditionalAccessGenerator(
+        then_=[SystemProcessWithoutSuperUser()],
+        else_=[public_generator],
+        value="system",
+    )
+
+    # Then, Else check
+    assert public_generator.needs(record=public_record) == {any_user}
+    assert public_generator.needs(record=restricted_record) == {
+        UserNeed(1),
+        UserNeed(2),
+        UserNeed(3),
+    }
+
+    # Nesting conditional generators
+    assert nested_generator.needs(record=public_record) == {any_user}
+    assert nested_generator.needs(record=restricted_record) == {
+        UserNeed(1),
+        UserNeed(2),
+        UserNeed(3),
+    }
+    assert nested_generator.needs(record=system_record) == {system_process}
+
+    # excludes
+    generator = ConditionalAccessGenerator(
+        then_=[Disable()], else_=[AnyUser()], value="system"
+    )
+    assert generator.excludes(record=system_record) == {any_user}
+    assert generator.excludes(record=public_record) == set()
+
+    # make_query
+    # Or will reduce to the most open clause
+    assert ConditionalGenerator._make_query(
+        generators=[AnyUser(), AnyUserIfPublic()]
+    ) == dsl.Q("match_all")
+    assert ConditionalGenerator._make_query(
+        generators=[AnyUserIfPublic(), RecordOwners()],
+        identity=mocker.Mock(provides=[Need(method="id", value=1)]),
+    ) == dsl.Q(
+        "bool",
+        should=[
+            dsl.Q("term", **{"_access.metadata_restricted": False}),
+            dsl.Q("term", **{"owners": 1}),
+        ],
+    )
+
+
+def test_ifconfig(app, create_record):
+    """Test IfConfig generator."""
+
+    r = create_record()
+    config_name = "IFCONFIG_TEST"
+    app.config[config_name] = True
+
+    generator = IfConfig(config_name, then_=[AnyUser()], else_=[RecordOwners()])
+    assert generator.needs(record=r) == {any_user}
+
+    app.config[config_name] = False
+    assert generator.needs(record=r) == {
+        UserNeed(1),
+        UserNeed(2),
+        UserNeed(3),
+    }
