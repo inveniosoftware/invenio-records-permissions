@@ -66,6 +66,7 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     # Associated files permissions (which are really bucket permissions)
     can_read_files = [AnyUserIfPublic(), RecordOwners()]
     can_update_files = [RecordOwners()]
+    can_read_deleted_files = []
 
     def __init__(self, action, **over):
         """Constructor."""
