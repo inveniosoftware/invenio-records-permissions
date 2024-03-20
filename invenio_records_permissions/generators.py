@@ -221,7 +221,7 @@ class AllowedByAccessLevel(Generator):
                 **{
                     "internal.access_levels.{}".format(access_level): {
                         "scheme": "person",
-                        "id": id_need.value
+                        "id": id_need.value,
                         # TODO: Implement other schemes
                     }
                 }
@@ -295,6 +295,11 @@ class ConditionalGenerator(Generator):
             for g in self._generators(record, **kwargs)
         ]
         return set(chain.from_iterable(excludes))
+
+    def query_filter(self, **kwargs):
+        """Create query filter based on the condition."""
+        record = kwargs.pop("record", None)
+        return self._make_query(self._generators(record, **kwargs)) or []
 
     @staticmethod
     def _make_query(generators, **kwargs):
