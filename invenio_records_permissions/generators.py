@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2019-2023 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
+# Copyright (C) 2022-2024 TU Wien.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -23,6 +24,7 @@ from invenio_access.permissions import (
     superuser_access,
     system_process,
 )
+from invenio_base.utils import obj_or_import_string
 from invenio_search.engine import dsl
 
 
@@ -221,7 +223,7 @@ class AllowedByAccessLevel(Generator):
                 **{
                     "internal.access_levels.{}".format(access_level): {
                         "scheme": "person",
-                        "id": id_need.value
+                        "id": id_need.value,
                         # TODO: Implement other schemes
                     }
                 }
@@ -296,6 +298,11 @@ class ConditionalGenerator(Generator):
         ]
         return set(chain.from_iterable(excludes))
 
+    def query_filter(self, **kwargs):
+        """Create query filter based on the condition."""
+        record = kwargs.pop("record", None)
+        return self._make_query(self._generators(record, **kwargs)) or []
+
     @staticmethod
     def _make_query(generators, **kwargs):
         """Make a query for one set of generators."""
@@ -316,6 +323,22 @@ class IfConfig(ConditionalGenerator):
     def _condition(self, **_):
         """Check if the config value is truthy."""
         return current_app.config.get(self.config_key) in self.accept_values
+
+
+class DisableIfReadOnly(IfConfig):
+    """Disable action for ALL users if the system is in read-only mode.
+
+    This generator uses the ``RECORDS_PERMISSIONS_READ_ONLY`` configuration item
+    to determine if the read-only mode is set.
+    """
+
+    def __init__(self):
+        """Initialize generator."""
+        super().__init__(
+            config_key="RECORDS_PERMISSIONS_READ_ONLY",
+            then_=[Disable()],
+            else_=[],
+        )
 
 
 #
