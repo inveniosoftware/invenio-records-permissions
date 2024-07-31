@@ -14,7 +14,7 @@ from flask import current_app
 from werkzeug.utils import import_string
 
 from ..errors import UnknownGeneratorError
-from ..generators import AnyUser, AnyUserIfPublic, Disable, RecordOwners
+from ..generators import AnyUser, AnyUserIfPublic, Disable, RecordOwners, SystemProcess
 from .base import BasePermissionPolicy
 
 
@@ -67,6 +67,7 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     can_read_files = [AnyUserIfPublic(), RecordOwners()]
     can_update_files = [RecordOwners()]
     can_read_deleted_files = []
+    can_create_or_update_many = [SystemProcess()]
 
     def __init__(self, action, **over):
         """Constructor."""
