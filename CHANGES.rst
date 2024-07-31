@@ -9,6 +9,7 @@
 Changes
 =======
 
-Version 1.0.0 (released TBD)
+Version v0.20.0 (released 2024-07-31)
 
-- Initial public release.
+- record: add create_or_update_many permission
+

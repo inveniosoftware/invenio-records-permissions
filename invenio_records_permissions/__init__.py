@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2019-2020 CERN.
+# Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
@@ -153,7 +153,7 @@ The succinct encoding of the permissions for your instance gives you
 from .ext import InvenioRecordsPermissions
 from .policies import BasePermissionPolicy, RecordPermissionPolicy
 
-__version__ = "0.19.2"
+__version__ = "0.20.0"
 
 __all__ = (
     "__version__",
