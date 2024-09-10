@@ -221,7 +221,7 @@ class AllowedByAccessLevel(Generator):
                 **{
                     "internal.access_levels.{}".format(access_level): {
                         "scheme": "person",
-                        "id": id_need.value
+                        "id": id_need.value,
                         # TODO: Implement other schemes
                     }
                 }
