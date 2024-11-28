@@ -9,6 +9,11 @@
 Changes
 =======
 
+Version v0.21.1 (released 2024-11-28)
+
+- installation: bump invenio-access
+    * This removes the dependency to invenio-admin.
+
 Version v0.21.0 (released 2024-09-30)
 
 - setup: move unnecessary `invenio-records` dependency to tests requirements
