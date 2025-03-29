@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2019-2023 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -16,7 +17,7 @@ from itertools import chain
 
 from flask import current_app
 from flask_principal import ActionNeed, UserNeed
-from invenio_access import ActionRoles, ActionUsers
+from invenio_access import ActionRoles, ActionUsers, Permission
 from invenio_access.permissions import (
     any_user,
     authenticated_user,
@@ -248,11 +249,11 @@ class AdminAction(Generator):
         """Enabling Needs."""
         return [self.action]
 
-    def query_filter(self, identity, **kwargs):
+    def query_filter(self, identity=None, **kwargs):
         """Not implemented at this level."""
-        for need in identity.provides:
-            if need.value == self.action.value:
-                return dsl.Q("match_all")
+        permission = Permission(self.action)
+        if identity and permission.allows(identity):
+            return dsl.Q("match_all")
         return []
 
 

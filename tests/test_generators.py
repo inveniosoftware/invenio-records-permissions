@@ -3,19 +3,21 @@
 # Copyright (C) 2019 CERN.
 # Copyright (C) 2019 Northwestern University.
 # Copyright (C) 2023 Graz University of Technology
+# Copyright (C) 2024 Ubiquity Press.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
 # more details.
 
-import copy
-
 import pytest
 from flask_principal import ActionNeed, Need, UserNeed
+from invenio_access.models import ActionRoles
 from invenio_access.permissions import any_user, authenticated_user, system_process
+from invenio_accounts.models import Role
 from invenio_search.engine import dsl
 
 from invenio_records_permissions.generators import (
+    AdminAction,
     AllowedByAccessLevel,
     AnyUser,
     AnyUserIfPublic,
@@ -266,3 +268,28 @@ def test_ifconfig(app, create_record):
         UserNeed(2),
         UserNeed(3),
     }
+
+
+def test_admin_action(app, db, mocker):
+    """Test AdminAction generator."""
+    action = ActionNeed("admin")
+    generator = AdminAction(action)
+
+    assert generator.needs() == [action]
+
+    # Role doesn't have any action associated with it.
+    assert not generator.query_filter(
+        identity=mocker.Mock(provides=[Need(method="role", value="admin")])
+    )
+    # Action directly assigned to the identity
+    assert generator.query_filter(
+        identity=mocker.Mock(provides=[action])
+    ).to_dict() == {"match_all": {}}
+
+    # Create role and asign the right action to it
+    admin = Role(name="admin")
+    db.session.add(ActionRoles.allow(action, role=admin))
+    db.session.commit()
+    assert generator.query_filter(
+        identity=mocker.Mock(provides=[Need(method="role", value="admin")])
+    ).to_dict() == {"match_all": {}}
