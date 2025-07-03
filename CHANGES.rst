@@ -1,7 +1,7 @@
 ..
     Copyright (C) 2019-2024 CERN.
     Copyright (C) 2019-2024 Northwestern University.
-    Copyright (C) 2024 Graz University of Technology.
+    Copyright (C) 2024-2025 Graz University of Technology.
 
     Invenio-Records-Permissions is free software; you can redistribute it
     and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -9,6 +9,13 @@
 
 Changes
 =======
+
+Version 1.1.0 (release 2025-07-03)
+
+- generators: fix AdmiAction permission check
+- fix(tests): add configuration
+- fix: setuptools require underscores instead of dashes
+- i18n: removed deprecated messages
 
 Version 1.0.0 (release 2024-12-09)
 

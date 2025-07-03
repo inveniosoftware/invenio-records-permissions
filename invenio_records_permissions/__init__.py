@@ -2,7 +2,7 @@
 #
 # Copyright (C) 2019-2024 CERN.
 # Copyright (C) 2019-2024 Northwestern University.
-# Copyright (C) 2024 Graz University of Technology.
+# Copyright (C) 2024-2025 Graz University of Technology.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -154,7 +154,7 @@ The succinct encoding of the permissions for your instance gives you
 from .ext import InvenioRecordsPermissions
 from .policies import BasePermissionPolicy, RecordPermissionPolicy
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 __all__ = (
     "__version__",
