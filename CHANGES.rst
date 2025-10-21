@@ -2,6 +2,7 @@
     Copyright (C) 2019-2024 CERN.
     Copyright (C) 2019-2024 Northwestern University.
     Copyright (C) 2024-2025 Graz University of Technology.
+    Copyright (C) 2025 KTH Royal Institute of Technology.
 
     Invenio-Records-Permissions is free software; you can redistribute it
     and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -9,6 +10,10 @@
 
 Changes
 =======
+
+Version v1.2.1 (released 2025-10-21)
+
+- Remove unused i18n boilerplate
 
 Version v1.2.0 (released 2025-07-17)
 
