@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2019 CERN.
 # Copyright (C) 2019 Northwestern University.
+# Copyright (C) 2025 KTH Royal Institute of Technology.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -14,14 +15,11 @@
 
 include .dockerignore
 include .editorconfig
-include .tx/config
 prune docs/_build
-recursive-include invenio_records_permissions/translations *.po *.pot *.mo
 include *.rst
 include *.sh
 include *.txt
 include LICENSE
-include babel.ini
 include pytest.ini
 recursive-include docs *.bat
 recursive-include docs *.py
