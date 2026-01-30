@@ -9,7 +9,6 @@
 
 """Permission policies for Invenio records."""
 
-
 from . import config
 
 
