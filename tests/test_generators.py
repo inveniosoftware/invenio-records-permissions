@@ -291,5 +291,5 @@ def test_admin_action(app, db, mocker):
     db.session.add(ActionRoles.allow(action, role=admin))
     db.session.commit()
     assert generator.query_filter(
-        identity=mocker.Mock(provides=[Need(method="role", value="admin")])
+        identity=mocker.Mock(provides=[Need(method="role", value=admin.id)])
     ).to_dict() == {"match_all": {}}
