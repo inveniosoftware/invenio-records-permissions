@@ -58,7 +58,7 @@ def role_w_superuser_access(db):
 @pytest.fixture(scope="function")
 def role_w_superuser_access_need(role_w_superuser_access):
     """Superuser role fixture."""
-    return RoleNeed(role_w_superuser_access.name)
+    return RoleNeed(role_w_superuser_access.id)
 
 
 @pytest.fixture(scope="function")
