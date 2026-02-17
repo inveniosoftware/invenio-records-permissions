@@ -11,6 +11,10 @@
 Changes
 =======
 
+Version v2.0.1 (released 2026-02-17)
+
+- fix(tests): check role.id instead of role.name
+
 Version v2.0.0 (released 2026-01-30)
 
 - chore(black): update formatting to >= 26.0
