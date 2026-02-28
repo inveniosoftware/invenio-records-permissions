@@ -3,6 +3,7 @@
 # Copyright (C) 2019-2023 CERN.
 # Copyright (C) 2019-2020 Northwestern University.
 # Copyright (C) 2024 Ubiquity Press.
+# Copyright (C) 2026 CESNET z.s.p.o.
 #
 # Invenio-Records-Permissions is free software; you can redistribute it
 # and/or modify it under the terms of the MIT License; see LICENSE file for
@@ -11,12 +12,12 @@
 """Invenio Records Permissions Generators."""
 
 import operator
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from functools import reduce
 from itertools import chain
 
 from flask import current_app
-from flask_principal import ActionNeed, UserNeed
+from flask_principal import UserNeed
 from invenio_access import ActionRoles, ActionUsers, Permission
 from invenio_access.permissions import (
     any_user,
@@ -225,7 +226,7 @@ class AllowedByAccessLevel(Generator):
                         "id": id_need.value,
                         # TODO: Implement other schemes
                     }
-                }
+                },
             )
             for access_level in read_levels
         ]
@@ -339,3 +340,142 @@ class IfConfig(ConditionalGenerator):
 # |       False     |       False      |     Open     |  True  |
 # |-----------------|------------------|--------------|--------|
 #
+
+
+class CompositeGenerator(Generator, ABC):
+    """Base class for generators that compose multiple generators.
+
+    This generator implements the Composite design pattern, allowing you to combine
+    multiple generators and treat them as a single generator. Subclasses must implement
+    the ``_generators(**context)`` method to return the list of generators to compose.
+
+    Behavior:
+        - ``needs``: Combines (flattens) the needs from all composed generators
+        - ``excludes``: Combines (flattens) the excludes from all composed generators
+        - ``query_filter``: Combines query filters using OR logic (any filter matches)
+    """
+
+    @abstractmethod
+    def _generators(self, **context):
+        """Return the list of generators to compose.
+
+        Must be implemented by subclasses.
+
+        :param context: Context dictionary that may contain record, etc.
+        :returns: List of Generator instances to compose
+        """
+        raise NotImplementedError  # pragma: no cover
+
+    def needs(self, **context):
+        """Get enabling needs from all composed generators.
+
+        Combines needs from all generators into a single flattened list.
+        """
+        needs = [
+            generator.needs(**context) for generator in self._generators(**context)
+        ]
+        return list(chain.from_iterable(needs))
+
+    def excludes(self, **context):
+        """Get preventing needs from all composed generators.
+
+        Combines excludes from all generators into a single flattened list.
+        """
+        excludes = [
+            generator.excludes(**context) for generator in self._generators(**context)
+        ]
+        return list(chain.from_iterable(excludes))
+
+    def query_filter(self, **context):
+        """Get search filters from all composed generators.
+
+        Combines query filters from all generators using OR logic. This means a record
+        matches if it satisfies ANY of the composed generator's filters.
+
+        :returns: Combined query using OR, or match_none if no generators provide filters
+        """
+        generators = self._generators(**context)
+
+        queries = [g.query_filter(**context) for g in generators]
+        queries = [q for q in queries if q]
+        if not queries:
+            return dsl.Q("match_none")
+
+        return reduce(operator.or_, queries) if queries else None
+
+
+class SameAs(CompositeGenerator):
+    """Generator that delegates permissions to another permission on the same policy.
+
+    This generator allows you to reuse the permission configuration from one action
+    for another action, promoting DRY (Don't Repeat Yourself) principles. It dynamically
+    retrieves the generators from the specified permission attribute on the policy.
+
+    This is particularly useful when:
+        - Multiple actions should have identical permission requirements
+        - You want permission inheritance when subclassing policies
+        - You need to maintain a single source of truth for related permissions
+
+    Example:
+        .. code-block:: python
+
+            class RecordPermissionPolicy(BasePermissionPolicy):
+                can_edit = [RecordOwners(), AdminAction("admin-access")]
+                can_delete = [SameAs("can_edit")]  # Delegates to can_edit
+                can_create_files = [SameAs("can_edit")]  # Also delegates to can_edit
+
+        In this example, ``can_delete`` and ``can_create_files`` will have the exact
+        same permissions as ``can_edit``. If you later modify ``can_edit`` or override
+        it in a subclass, the delegating permissions automatically inherit those changes.
+
+    By virtue of operator overloading, ``SameAs`` can also be used outside of lists
+    to simplify permission policies:
+
+        .. code-block:: python
+
+            class RecordPermissionPolicy(BasePermissionPolicy):
+                can_manage = [RecordOwners(), SystemProcess()]
+                can_curate = SameAs("can_manage") + [AccessGrant("edit")]
+                can_delete = SameAs("can_curate")
+
+    Note:
+        The permission name must be an attribute on the policy instance and must
+        contain a list of generators.
+    """
+
+    def __init__(self, permission_name):
+        """Initialize the generator.
+
+        :param permission_name: Name of the permission attribute to delegate to.
+            Must be in the format "can_<action>" (e.g., "can_edit", "can_read").
+            This attribute must exist on the permission policy and contain a list of generators.
+        """
+        self._delegated_permission_name = permission_name
+
+    def _generators(self, **context):
+        """Get the generators from the delegated permission on the policy.
+
+        :param context: Must contain 'permission_policy' key with the policy instance
+        :returns: List of generators from the delegated permission
+        """
+        policy = context["permission_policy"]
+        return getattr(policy, self._delegated_permission_name)
+
+    def __add__(self, other):
+        """Allow adding another generator or list of generators to this SameAs generator.
+
+        Example:
+            can_delete = SameAs("can_edit") + [RecordOwners()]
+        """
+        if isinstance(other, (tuple, list, set)):
+            return [self] + list(other)
+        else:
+            return [self, other]
+
+    def __iter__(self):
+        """Let the SameAs be used as the sole element inside the can_abc properties.
+
+        Example:
+            can_delete = SameAs("can_edit")
+        """
+        return iter([self])

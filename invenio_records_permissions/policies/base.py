@@ -58,7 +58,12 @@ class BasePermissionPolicy(Permission):
         """Constructor."""
         super().__init__()
         self.action = action
-        self.over = over
+
+        # adding self to the permission policy context for generators to use
+        self.over = {
+            **over,
+            "permission_policy": self,
+        }
 
     @property
     def generators(self):

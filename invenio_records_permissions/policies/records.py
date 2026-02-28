@@ -14,7 +14,14 @@ from flask import current_app
 from werkzeug.utils import import_string
 
 from ..errors import UnknownGeneratorError
-from ..generators import AnyUser, AnyUserIfPublic, Disable, RecordOwners, SystemProcess
+from ..generators import (
+    AnyUser,
+    AnyUserIfPublic,
+    Disable,
+    RecordOwners,
+    SameAs,
+    SystemProcess,
+)
 from .base import BasePermissionPolicy
 
 
@@ -43,7 +50,13 @@ def obj_or_import_string(value, default=None):
 
 
 class RecordPermissionPolicy(BasePermissionPolicy):
-    """Access control configuration for records."""
+    """Access control configuration for records.
+
+    ``can_read`` and ``can_update`` are the main permissions.
+    ``can_delete``, ``can_update_files`` are delegating to ``can_update``,
+    but can be overridden if needed.
+    ``can_read_files`` is delegating to ``can_read``, but can be overridden if needed.
+    """
 
     NEED_LABEL_TO_ACTION = {
         "bucket-update": "update_files",
@@ -57,15 +70,15 @@ class RecordPermissionPolicy(BasePermissionPolicy):
     # be used.
     can_create = [Disable()]
     # Read access given to everyone if public record/files and owners always.
-    can_read = [AnyUserIfPublic(), RecordOwners()]
+    can_read = SameAs("can_update") + [AnyUserIfPublic()]
     # Update access given to record owners.
     can_update = [RecordOwners()]
     # Delete access given to superuser-access action only
     # (superuser-access is added by default by base policy)
     can_delete = []
     # Associated files permissions (which are really bucket permissions)
-    can_read_files = [AnyUserIfPublic(), RecordOwners()]
-    can_update_files = [RecordOwners()]
+    can_read_files = SameAs("can_read")
+    can_update_files = SameAs("can_update")
     can_read_deleted_files = []
     can_create_or_update_many = [SystemProcess()]
 
