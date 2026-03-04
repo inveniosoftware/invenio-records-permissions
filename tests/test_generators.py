@@ -37,7 +37,7 @@ def test_generator():
 
     assert generator.needs() == []
     assert generator.excludes() == []
-    assert generator.query_filter() == []
+    assert generator.query_filter() is None
 
 
 def test_any_user():
@@ -181,7 +181,7 @@ def test_allowedbyaccesslevels_query_filter(mocker):
         identity=mocker.Mock(provides=[mocker.Mock(method="foo", value=1)])
     )
 
-    assert query_filter == []
+    assert query_filter is None
 
 
 def test_conditional(create_record, mocker):

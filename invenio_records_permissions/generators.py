@@ -47,7 +47,7 @@ class Generator(object):
 
     def query_filter(self, **kwargs):
         """Search filters."""
-        return []
+        return None
 
 
 class AnyUser(Generator):
@@ -75,7 +75,7 @@ class SystemProcess(Generator):
         if system_process in identity.provides:
             return dsl.Q("match_all")
         else:
-            return []
+            return None
 
 
 class SystemProcessWithoutSuperUser(SystemProcess):
@@ -119,7 +119,7 @@ class RecordOwners(Generator):
         for need in identity.provides:
             if need.method == "id":
                 return dsl.Q("term", owners=need.value)
-        return []
+        return None
 
 
 class AnyUserIfPublic(Generator):
@@ -211,7 +211,7 @@ class AllowedByAccessLevel(Generator):
         )
 
         if not id_need:
-            return []
+            return None
 
         # To get the record in the search results, the access level must
         # have been put in the 'read' array
@@ -255,7 +255,7 @@ class AdminAction(Generator):
         permission = Permission(self.action)
         if identity and permission.allows(identity):
             return dsl.Q("match_all")
-        return []
+        return None
 
 
 class ConditionalGenerator(Generator):
