@@ -1,13 +1,8 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2019-2023 CERN.
-# Copyright (C) 2019-2020 Northwestern University.
-# Copyright (C) 2024 Ubiquity Press.
-# Copyright (C) 2026 CESNET z.s.p.o.
-#
-# Invenio-Records-Permissions is free software; you can redistribute it
-# and/or modify it under the terms of the MIT License; see LICENSE file for
-# more details.
+# SPDX-FileCopyrightText: 2019-2023 CERN.
+# SPDX-FileCopyrightText: 2019-2020 Northwestern University.
+# SPDX-FileCopyrightText: 2024 Ubiquity Press.
+# SPDX-FileCopyrightText: 2026 CESNET z.s.p.o.
+# SPDX-License-Identifier: MIT
 
 """Invenio Records Permissions Generators."""
 

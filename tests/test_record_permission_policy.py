@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-#
-# Copyright (C) 2022 CERN.
-#
-# Invenio-Records-Permissions is free software; you can redistribute it
-# and/or modify it under the terms of the MIT License; see LICENSE file for
-# more details.
+# SPDX-FileCopyrightText: 2022 CERN.
+# SPDX-License-Identifier: MIT
 from flask_principal import ActionNeed, Need, UserNeed
 from invenio_access.permissions import any_user, system_process
 
