@@ -11,6 +11,12 @@
 Changes
 =======
 
+Version v3.0.0 (released 2026-05-29)
+
+- chore(setup): bump dependencies
+- feat(typing): Returning None instead of [] in Generator
+- feat: SameAs generator
+
 Version v2.0.1 (released 2026-02-17)
 
 - fix(tests): check role.id instead of role.name
