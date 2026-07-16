@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2019-2024 Northwestern University.
 # SPDX-FileCopyrightText: 2024-2026 Graz University of Technology.
 # SPDX-FileCopyrightText: 2025 KTH Royal Institute of Technology.
+# SPDX-FileCopyrightText: 2026 TU Wien.
 # SPDX-License-Identifier: MIT
 
 r"""Permission generators and policies for Invenio records.
@@ -150,7 +151,7 @@ The succinct encoding of the permissions for your instance gives you
 from .ext import InvenioRecordsPermissions
 from .policies import BasePermissionPolicy, RecordPermissionPolicy
 
-__version__ = "4.0.0"
+__version__ = "4.0.1"
 
 __all__ = (
     "__version__",
