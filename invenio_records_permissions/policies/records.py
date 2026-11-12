@@ -1,10 +1,10 @@
 # SPDX-FileCopyrightText: 2019-2024 CERN.
 # SPDX-FileCopyrightText: 2019-2020 Northwestern University.
+# SPDX-FileCopyrightText: 2026 CESNET z.s.p.o.
 # SPDX-License-Identifier: MIT
 
 """Access controls for records."""
 
-import six
 from flask import current_app
 from werkzeug.utils import import_string
 
@@ -37,7 +37,7 @@ def obj_or_import_string(value, default=None):
     :params default: Default object to return if the import fails.
     :returns: The imported object.
     """
-    if isinstance(value, six.string_types):
+    if isinstance(value, str):
         return import_string(value)
     elif value:
         return value
