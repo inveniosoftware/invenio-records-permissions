@@ -1,5 +1,5 @@
 ..
-    SPDX-FileCopyrightText: 2019-2024 CERN.
+    SPDX-FileCopyrightText: 2019-2026 CERN.
     SPDX-FileCopyrightText: 2019-2024 Northwestern University.
     SPDX-FileCopyrightText: 2024-2026 Graz University of Technology.
     SPDX-FileCopyrightText: 2025 KTH Royal Institute of Technology.
@@ -8,6 +8,10 @@
 
 Changes
 =======
+
+Version v4.1.0 (released 2026-11-24)
+
+- chore(setup): bump dependencies
 
 Version v4.0.1 (released 2026-07-16)
 
@@ -70,4 +74,3 @@ Version v0.21.0 (released 2024-09-30)
 Version v0.20.0 (released 2024-07-31)
 
 - record: add create_or_update_many permission
-

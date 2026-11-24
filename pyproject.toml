@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2019-2024 CERN.
+# SPDX-FileCopyrightText: 2019-2026 CERN.
 # SPDX-FileCopyrightText: 2019 Northwestern University.
 # SPDX-FileCopyrightText: 2022-2026 Graz University of Technology.
 # SPDX-FileCopyrightText: 2025 KTH Royal Institute of Technology.
@@ -46,7 +46,7 @@ opensearch2 = [
   "invenio-search[opensearch2]>=3.0.0,<4.0.0",
 ]
 tests = [
-  "invenio-accounts>=9.0.0,<10.0.0",
+  "invenio-accounts>=10.0.0,<11.0.0",
   "invenio-app>=3.0.0,<4.0.0",
   "invenio-db[mysql,postgresql,versioning]>=2.2.0,<3.0.0",
   "invenio-records>=6.0.0,<7.0.0",
